@@ -1,4 +1,4 @@
-// Copyright 2015 Shiguredo Inc. <fuji@shiguredo.jp>
+// Copyright 2015-2016 Shiguredo Inc. <fuji@shiguredo.jp>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -158,7 +158,7 @@ func TestIpAddressLoGet(t *testing.T) {
 	assert := assert.New(t)
 
 	i := IpAddressStatus{
-		Interfaces: []string{"lo0","en0"},
+		Interfaces: []string{"lo0", "en0"},
 	}
 	assert.NotNil(i)
 	msgs := i.Get()
