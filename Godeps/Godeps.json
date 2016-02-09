@@ -32,7 +32,7 @@
 			"Rev": "e77438504d45b9985c99a75730fe65220ceea00e"
 		},
 		{
-			"ImportPath": "github.com/shirou/gopsutil/internal/common",
+			"ImportPath": "github.com/shirou/gopsutil/cpu",
 			"Comment": "1.0.0-254-ge774385",
 			"Rev": "e77438504d45b9985c99a75730fe65220ceea00e"
 		},
