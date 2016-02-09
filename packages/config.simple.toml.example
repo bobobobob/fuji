@@ -17,14 +17,14 @@
     topic_prefix = "sometextforprefix"
 
 
-[device."dora/dummy"]
+[device."dora"]
 
+    type = "dummy"
     broker = "sango"
     qos = 0
 
-    interval = 10
+    interval = 30
     payload = "Hello world."
-    subscribe = true
 
 [status]
 
@@ -38,3 +38,7 @@
 [[status."memory"]]
 
     virtual_memory = "total, available, percent, used, free"
+
+[[status."ip_address"]]
+
+    interface = "all"
