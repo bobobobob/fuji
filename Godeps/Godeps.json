@@ -18,10 +18,6 @@
 			"Rev": "be52937128b38f1d99787bb476c789e2af1147f1"
 		},
 		{
-			"ImportPath": "github.com/StackExchange/wmi",
-			"Rev": "f3e2bae1e0cb5aef83e319133eabfee30013a4a5"
-		},
-		{
 			"ImportPath": "github.com/go-ole/go-ole",
 			"Comment": "v1.2.0-6-g2b47859",
 			"Rev": "2b4785954496f7121eb0934e9dc55e85ad40ad8f"
