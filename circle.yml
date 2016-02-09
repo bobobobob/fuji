@@ -24,7 +24,7 @@ dependencies:
     - rm -rf ${GOPATH}/src/${REPO_PATH}
     - mkdir -p ${GOPATH}/src/${ORG_PATH}
     - cp -r ../fuji ${GOPATH}/src/${ORG_PATH}
-    - go get github.com/kr/godep
+    - go get github.com/tools/godep
     - cd ${GOPATH}/src/${REPO_PATH} && godep restore
 
 test:
