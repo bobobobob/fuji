@@ -1,119 +1,104 @@
-#########
-ChangeLog
-#########
+########
+CHANGELOG
+########
 
+UPDATE
+	backword compatible change
+ADD
+	backword compatible enhancement
+CHANGE
+	backworkd incompatible change
+FIX
+	bug fix
+
+1.0.0
+=====
+
+:release: 2016-02-10
+
+UPDATE
+
+- build: Golang version 1.5.3
+- build: Remove gopsutil/common from Godep.json.
+
+ADD
+
+- config: validate and abort in case of invalid configuration.
+- status: status report on IP address.
+- gateway: MQTT client authentication using clients certification.
+- gateway: added test in the case of empty gateway name.
+- gateway: will_topic configuration capability.
+- test: TLS testcase added using mosquitto broker on docker.
+
+CHANGE
+
+- config: configuration syntax modified to use type string to show device type.
+- config: fuji exits when there are irregular configuration formats in toml.
+- config: switch configuration file format from ini to toml.
+- gateway: publish/subscribe topic changed to distinguish both.
+
+FIX
+
+- test: will testcase fix.
 
 0.3.0
 =====
 
 :release: 2015-10-07
 
-- update godep dependency and user latest paho MQTT library
-- Changed to use go 1.5
-- Customized cli.VersionPrinter
+UPDATE
+
+- build: refactored Makefile
+- build: change to go 1.5.1
+- build: generated control from control.in.
+- build: update library dependency on paho and gopsutil.
+- optimization: call regexp.MustCompile() once on start-up.
+- refactored: moved inidef/porttype.go to device/porttype.go.
+
+ADD
+
+- app: customized cli.VersionPrinter.
+
+FIX
+
+- fix DeviceChannel multiplexing
+
 
 0.2.3
 =====
 
 :release: 2015-05-19
 
-- Fixed versioning in downloads
-- Add "How To Release" to README.rst
+UPDATE
+
+- document: add "How To Release" to README.rst.
+
+FIX
+
+- build: fixed version TAG and CHANGELOG description.
+
 
 0.2.2
-=====
+======
 
 :release: 2015-05-19
 
-- Fixed consuming CPU bug in dummy device.
+FIX
 
+- device: remove default clause to not consume all cpu.
 
 0.2.1
 =====
 
 :release: 2015-04-29
 
-- Fixed ARM5 and ARM7 build settings
+FIX
+
+- build: fixed ARM5 and ARM7 build settings.
 
 0.2.0
-=====
+======
 
-**Paid support and customize has been started**
+First public release
 
 :release: 2015-04-22
-
-- MQTT 3.1.1
-- MQTT over TLS
-- Sending Device Status using `gopsutil <https://github.com/shirou/gopsutil>`_
-
-  - CPU and memory information
-  - Interval
-
-- Will Message
-
-  - ``will_message = ""`` in config.
-  - topic_prefix
-  - will message will be sent to fixed topic. ex: ``<Gateway-Name>/will``
-- Retain
-
-  - ``retain = true`` in config.
-- Binary Message
-
-  - To send binary, specify like ``\\x00\\x12`` 
-- Work on `Armadillo-IoT <http://armadillo.atmark-techno.com/armadillo-iot>`_
-
-  - MQTT over TLS via 3G
-- Work on Intel Edison
-- Infinity connection retry
-- Subscribe
-  - ``subscribe = true`` in config file.
-  - Subscribe fixed topic (ex: ``<Gateway-Name>/<Device-Name>``). When a message comes, write the payload to the device.
-- Binary for `Armadillo-IoT <http://armadillo.atmark-techno.com/armadillo-iot>`_
-
-  - ARM5
-- Packaged file for Raspberry Pi Model B+
-
-  - Raspbian, ARM6
-
-- Packaged file for Intel Edison
-
-  - Yocto Linux
-
-- Message sending Retry
-
-  - If sending message failed, retry sometimes.
-- Redundant server and switching each other
-
-  - After retry to a primary broker failed, switch to secondary broker.
-  - ``[device "sango/1"]`` and ``[device "sango/2"]``
-- Multiple Broker
-
-  - Connect to each broker independently.
-
-- Japanese Document
-
-0.1.0
-=====
-
-:release: 2015-02-13
-
-- First internal release
-
-- Serial port device
-
-  - Acquire real sensor data from EnOcean Device
-
-- Dummy Device
-- MQTT 3.1
-- MQTT Broker
-
-  - single broker only
-
-- Topic_prefix
-- dpkg install
-
-  - Raspbian
-
-- Work on `Raspberry Pi <http://www.raspberrypi.org/>`_
-- Package file for `Raspberry Pi`
-- Japanese Document
