@@ -55,6 +55,28 @@ ChangeLog
 
 see `CHANGELOG.rst <https://github.com/shiguredo/fuji/blob/develop/CHANGELOG.rst>`_
 
+Migration Notice
+================
+
+from version 0.3.0 or under to 1.0.0
+--------------------------------------
+
+Configuration file format changed to TOML
+
+see  `config.toml.example <https://github.com/shiguredo/fuji/blob/develop/config.toml.example>`_
+
+
+Topic of publish/subscribe message changed
+
+- publish topic format from device ::
+
+     <topicprefix>/<gatewayname>/<devicename>/<devicetype>/publish
+
+- subscribe topic format to device (now serial type device only support this functionality) ::
+
+     <topicprefix>/<gatewayname>/<devicename>/<devicetype>/subscribe
+
+
 Build
 =====
 
