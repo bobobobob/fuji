@@ -1,61 +1,57 @@
 {
 	"ImportPath": "github.com/shiguredo/fuji",
-	"GoVersion": "go1.5.1",
+	"GoVersion": "go1.5.3",
 	"Deps": [
 		{
 			"ImportPath": "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git",
-			"Comment": "v0.9.1-14-g546c47a",
-			"Rev": "546c47a6d0e9492e77f6f37473d59c36a708e08b"
+			"Comment": "v0.9.1-20-g617c801",
+			"Rev": "617c801af238c3af2d9e72c5d4a0f02edad03ce5"
 		},
 		{
 			"ImportPath": "github.com/BurntSushi/toml",
-			"Comment": "v0.1.0-21-g056c9bc",
-			"Rev": "056c9bc7be7190eaa7715723883caffa5f8fa3e4"
+			"Comment": "v0.1.0-23-g5c4df71",
+			"Rev": "5c4df71dfe9ac89ef6287afc05e4c1b16ae65a1e"
 		},
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
-			"Comment": "v0.7.1",
-			"Rev": "3fc34d061b9c78a70db853c7cb6b0576b6d4f32d"
+			"Comment": "v0.9.0",
+			"Rev": "be52937128b38f1d99787bb476c789e2af1147f1"
 		},
 		{
-			"ImportPath": "github.com/codegangsta/cli",
-			"Comment": "1.2.0-95-g9b2bd2b",
-			"Rev": "9b2bd2b3489748d4d0a204fa4eb2ee9e89e0ebc6"
-		},
-		{
-			"ImportPath": "github.com/go-ini/ini",
-			"Comment": "v0-16-g1772191",
-			"Rev": "177219109c97e7920c933e21c9b25f874357b237"
-		},
-		{
-			"ImportPath": "github.com/pborman/uuid",
-			"Rev": "ca53cad383cad2479bbba7f7a1a05797ec1386e4"
+			"ImportPath": "github.com/go-ole/go-ole",
+			"Comment": "v1.2.0-6-g2b47859",
+			"Rev": "2b4785954496f7121eb0934e9dc55e85ad40ad8f"
 		},
 		{
 			"ImportPath": "github.com/shirou/gopsutil/cpu",
-			"Comment": "1.0.0-160-g82a76c0",
-			"Rev": "82a76c01e3af444ce144b30f228467976ef75864"
+			"Comment": "1.0.0-254-ge774385",
+			"Rev": "e77438504d45b9985c99a75730fe65220ceea00e"
+		},
+		{
+			"ImportPath": "github.com/shirou/gopsutil/cpu",
+			"Comment": "1.0.0-254-ge774385",
+			"Rev": "e77438504d45b9985c99a75730fe65220ceea00e"
 		},
 		{
 			"ImportPath": "github.com/shirou/gopsutil/mem",
-			"Comment": "1.0.0-160-g82a76c0",
-			"Rev": "82a76c01e3af444ce144b30f228467976ef75864"
+			"Comment": "1.0.0-254-ge774385",
+			"Rev": "e77438504d45b9985c99a75730fe65220ceea00e"
 		},
 		{
 			"ImportPath": "github.com/tarm/serial",
-			"Rev": "e3f4c97bb7137112ddfc06cc44a939e45f41d941"
+			"Rev": "a53c419ae7ba5705d100024728f5254b81dd73e9"
 		},
 		{
 			"ImportPath": "golang.org/x/net/websocket",
-			"Rev": "db8e4de5b2d6653f66aea53094624468caad15d2"
+			"Rev": "7f88271ea9913b72aca44fa7fc8af919eacc17ce"
 		},
 		{
-			"ImportPath": "github.com/stretchr/testify/assert",
-			"Rev": "59fc8e570cd707a33a93842b00a9aae4b5cd38b2"
+			"ImportPath": "golang.org/x/sys/unix",
+			"Rev": "50c6bc5e4292a1d4e65c6e9be5f53be28bcbe28e"
 		},
 		{
 			"ImportPath": "gopkg.in/validator.v2",
-			"Rev": "8e445b9dc14ab1a1a78cc1f712df991307173ee6"
+			"Rev": "3e4f037f12a1221a0864cf0dd2e81c452ab22448"
 		}
 	]
 }
