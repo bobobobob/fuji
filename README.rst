@@ -72,7 +72,7 @@ Topic of publish/subscribe message changed
 
      <topicprefix>/<gatewayname>/<devicename>/<devicetype>/publish
 
-- subscribe topic format to device (now serial type device only support this functionality) ::
+- subscribe topic format to device (currently serial type device only support this functionality) ::
 
      <topicprefix>/<gatewayname>/<devicename>/<devicetype>/subscribe
 
