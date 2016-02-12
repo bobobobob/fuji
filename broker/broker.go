@@ -24,8 +24,8 @@ import (
 	"strconv"
 	"strings"
 
-	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
 	log "github.com/Sirupsen/logrus"
+	MQTT "github.com/eclipse/paho.mqtt.golang"
 	validator "gopkg.in/validator.v2"
 
 	"github.com/shiguredo/fuji/config"
