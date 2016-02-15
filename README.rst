@@ -2,7 +2,7 @@
 MQTT Gateway: Fuji
 ###########################
 
-:version: 0.3.0
+:version: 1.0.0
 
 .. image:: https://circleci.com/gh/shiguredo/fuji/tree/develop.svg?style=svg&circle-token=203d959fffaf8dcdc0c68642dde5329e55a47792
     :target: https://circleci.com/gh/shiguredo/fuji/tree/develop
@@ -39,21 +39,43 @@ Coming Soon
 Downloads
 =========
 
-:URL: https://github.com/shiguredo/fuji/releases/tag/0.3.0
+:URL: https://github.com/shiguredo/fuji/releases/tag/1.0.0
 
-- `fuji-gw_0.3.0_arm5.tar.gz <https://github.com/shiguredo/fuji/releases/download/0.3.0/fuji-gw_0.3.0_arm5.tar.gz>`_
-- `fuji-gw_0.3.0_arm6.tar.gz <https://github.com/shiguredo/fuji/releases/download/0.3.0/fuji-gw_0.3.0_arm6.tar.gz>`_
-- `fuji-gw_0.3.0_arm7.tar.gz <https://github.com/shiguredo/fuji/releases/download/0.3.0/fuji-gw_0.3.0_arm7.tar.gz>`_
-- `fuji-gw_0.3.0_edison_386.ipk <https://github.com/shiguredo/fuji/releases/download/0.3.0/fuji-gw_0.3.0_edison_386.ipk>`_
-- `fuji-gw_0.3.0_linux_386.tar.gz <https://github.com/shiguredo/fuji/releases/download/0.3.0/fuji-gw_0.3.0_linux_386.tar.gz>`_
-- `fuji-gw_0.3.0_linux_amd64.tar.gz <https://github.com/shiguredo/fuji/releases/download/0.3.0/fuji-gw_0.3.0_linux_amd64.tar.gz>`_
-- `fuji-gw_0.3.0_raspi2_arm7.deb <https://github.com/shiguredo/fuji/releases/download/0.3.0/fuji-gw_0.3.0_raspi2_arm7.deb>`_
-- `fuji-gw_0.3.0_raspi_arm6.deb <https://github.com/shiguredo/fuji/releases/download/0.3.0/fuji-gw_0.3.0_raspi_arm6.deb>`_
+- `fuji-gw_1.0.0_arm5.tar.gz <https://github.com/shiguredo/fuji/releases/download/1.0.0/fuji-gw_1.0.0_arm5.tar.gz>`_
+- `fuji-gw_1.0.0_arm6.tar.gz <https://github.com/shiguredo/fuji/releases/download/1.0.0/fuji-gw_1.0.0_arm6.tar.gz>`_
+- `fuji-gw_1.0.0_arm7.tar.gz <https://github.com/shiguredo/fuji/releases/download/1.0.0/fuji-gw_1.0.0_arm7.tar.gz>`_
+- `fuji-gw_1.0.0_edison_386.ipk <https://github.com/shiguredo/fuji/releases/download/1.0.0/fuji-gw_1.0.0_edison_386.ipk>`_
+- `fuji-gw_1.0.0_linux_386.tar.gz <https://github.com/shiguredo/fuji/releases/download/1.0.0/fuji-gw_1.0.0_linux_386.tar.gz>`_
+- `fuji-gw_1.0.0_linux_amd64.tar.gz <https://github.com/shiguredo/fuji/releases/download/1.0.0/fuji-gw_1.0.0_linux_amd64.tar.gz>`_
+- `fuji-gw_1.0.0_raspi2_arm7.deb <https://github.com/shiguredo/fuji/releases/download/1.0.0/fuji-gw_1.0.0_raspi2_arm7.deb>`_
+- `fuji-gw_1.0.0_raspi_arm6.deb <https://github.com/shiguredo/fuji/releases/download/1.0.0/fuji-gw_1.0.0_raspi_arm6.deb>`_
 
 ChangeLog
 =========
 
 see `CHANGELOG.rst <https://github.com/shiguredo/fuji/blob/develop/CHANGELOG.rst>`_
+
+Migration Notice
+================
+
+from version 0.3.0 or under to 1.0.0
+--------------------------------------
+
+Configuration file format changed to TOML
+
+see  `config.toml.example <https://github.com/shiguredo/fuji/blob/develop/config.toml.example>`_
+
+
+Topic of publish/subscribe message changed
+
+- publish topic format from device ::
+
+     <topicprefix>/<gatewayname>/<devicename>/<devicetype>/publish
+
+- subscribe topic format to device (currently serial type device only support this functionality) ::
+
+     <topicprefix>/<gatewayname>/<devicename>/<devicetype>/subscribe
+
 
 Build
 =====

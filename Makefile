@@ -9,7 +9,7 @@ FPM = fpm
 REPO="github.com/shiguredo/fuji/cmd/fuji"
 TEST_LIST := tests
 
-TAG=0.3.0
+TAG=1.0.0
 REV=`git rev-parse HEAD | cut -c1-7`
 ARTIFACTS=downloads
 BUILDDIR=build
