@@ -1,4 +1,4 @@
-// Copyright 2015 Shiguredo Inc. <fuji@shiguredo.jp>
+// Copyright 2015-2016 Shiguredo Inc. <fuji@shiguredo.jp>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,8 +27,8 @@ import (
 	validator "gopkg.in/validator.v2"
 
 	"github.com/shiguredo/fuji/broker"
+	"github.com/shiguredo/fuji/config"
 	"github.com/shiguredo/fuji/device"
-	"github.com/shiguredo/fuji/inidef"
 	"github.com/shiguredo/fuji/message"
 )
 
@@ -55,7 +55,7 @@ const (
 )
 
 func init() {
-	validator.SetValidationFunc("validtopic", inidef.ValidMqttPublishTopic)
+	validator.SetValidationFunc("validtopic", config.ValidMqttPublishTopic)
 }
 
 func (gateway Gateway) String() string {
@@ -63,8 +63,8 @@ func (gateway Gateway) String() string {
 }
 
 // NewGateway returns Gateway instance with config object
-func NewGateway(conf inidef.Config) (*Gateway, error) {
-	var section inidef.ConfigSection
+func NewGateway(conf config.Config) (*Gateway, error) {
+	var section config.ConfigSection
 	for _, s := range conf.Sections {
 		if s.Type == "gateway" {
 			section = s

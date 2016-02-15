@@ -1,4 +1,4 @@
-// Copyright 2015 Shiguredo Inc. <fuji@shiguredo.jp>
+// Copyright 2015-2016 Shiguredo Inc. <fuji@shiguredo.jp>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,12 +21,12 @@ import (
 
 	validator "gopkg.in/validator.v2"
 
-	"github.com/shiguredo/fuji/inidef"
+	"github.com/shiguredo/fuji/config"
 )
 
 // init is automatically invoked at initial time.
 func init() {
-	validator.SetValidationFunc("validtopic", inidef.ValidMqttPublishTopic)
+	validator.SetValidationFunc("validtopic", config.ValidMqttPublishTopic)
 }
 
 // TopicString is an type which is represents MQTT Topic string.
@@ -48,11 +48,11 @@ func (topic TopicString) Validate() error {
 		return errors.New("not a valid UTF8 string")
 	}
 
-	if inidef.ReU0.FindString(topic.Str) != "" {
+	if config.ReU0.FindString(topic.Str) != "" {
 		return errors.New("topic should NOT include \\U0000 character")
 	}
 
-	if inidef.ReWild.FindString(topic.Str) != "" {
+	if config.ReWild.FindString(topic.Str) != "" {
 		return errors.New("should not MQTT pub-topic include wildard character")
 	}
 	return nil

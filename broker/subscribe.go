@@ -1,4 +1,4 @@
-// Copyright 2015 Shiguredo Inc. <fuji@shiguredo.jp>
+// Copyright 2015-2016 Shiguredo Inc. <fuji@shiguredo.jp>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ func (s Subscribed) Delete(topic string) error {
 	return nil
 }
 func (b *Broker) AddSubscribed(deviceName string, qos byte) error {
-	t := strings.Join([]string{b.TopicPrefix, b.GatewayName, deviceName}, "/")
+	t := strings.Join([]string{b.TopicPrefix, b.GatewayName, deviceName, "subscribe"}, "/")
 	log.Infof("subscribe: %#v", t)
 	return b.Subscribed.Add(t, qos)
 }

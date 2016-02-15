@@ -1,4 +1,4 @@
-// Copyright 2015 Shiguredo Inc. <fuji@shiguredo.jp>
+// Copyright 2015-2016 Shiguredo Inc. <fuji@shiguredo.jp>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 
 	"github.com/shiguredo/fuji/broker"
-	"github.com/shiguredo/fuji/inidef"
+	"github.com/shiguredo/fuji/config"
 	"github.com/shiguredo/fuji/message"
 )
 
@@ -29,8 +29,8 @@ type Devicer interface {
 	AddSubscribe() error
 }
 
-// NewDevices is a factory method to create various kind of devices from ini.File
-func NewDevices(conf inidef.Config, brokers []*broker.Broker) ([]Devicer, []DeviceChannel, error) {
+// NewDevices is a factory method to create various kind of devices from config.Config
+func NewDevices(conf config.Config, brokers []*broker.Broker) ([]Devicer, []DeviceChannel, error) {
 	var ret []Devicer
 	var devChannels []DeviceChannel
 
@@ -45,7 +45,7 @@ func NewDevices(conf inidef.Config, brokers []*broker.Broker) ([]Devicer, []Devi
 		devChan := NewDeviceChannel()
 		devChannels = append(devChannels, devChan)
 
-		switch section.Arg {
+		switch section.Values["type"] {
 		case "dummy":
 			device, err = NewDummyDevice(section, brokers, devChan)
 			if err != nil {

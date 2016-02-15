@@ -1,4 +1,4 @@
-// Copyright 2015 Shiguredo Inc. <fuji@shiguredo.jp>
+// Copyright 2015-2016 Shiguredo Inc. <fuji@shiguredo.jp>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ type Message struct {
 	Topic      string
 }
 
-var (
+const (
 	TypeSubscribed = "subscribed"
 )
 

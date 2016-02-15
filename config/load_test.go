@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils
+package config
 
 import (
 	"testing"
@@ -20,24 +20,44 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestParsePayload(t *testing.T) {
+func TestDupGateway(t *testing.T) {
 	assert := assert.New(t)
 
-	ret, err := ParsePayload("hoge")
-	assert.Nil(err)
-	assert.Equal([]byte("hoge"), ret)
-
-	ret, err = ParsePayload(`\x11\x02\xff`)
-	assert.Nil(err)
-	assert.Equal([]byte{17, 2, 255}, ret)
-
-	// invalid byte sequence, wrong length
-	ret, err = ParsePayload(`\x01\x0211`)
+	configStr := `
+[[gateway]]
+    name = "ham"
+    max_retry_count = 30
+`
+	_, err := LoadConfigByte([]byte(configStr))
 	assert.NotNil(err)
-	assert.Equal([]byte{}, ret)
 
-	// invalid byte sequence
-	ret, err = ParsePayload(`\x01\xmm`)
+}
+
+func TestUniqBroker(t *testing.T) {
+	assert := assert.New(t)
+
+	configStr := `
+[broker."sango/2"]
+    host = "192.168.1.22"
+    port = 1883
+`
+	_, err := LoadConfigByte([]byte(configStr))
 	assert.NotNil(err)
-	assert.Equal([]byte{1}, ret)
+
+}
+
+func TestDupDevice(t *testing.T) {
+	assert := assert.New(t)
+
+	configStr := `
+[[device."dora/dummy"]]
+    broker = "sango"
+    qos = 1
+    dummy = true
+    interval = 10
+    payload = "Hello world."
+`
+	_, err := LoadConfigByte([]byte(configStr))
+	assert.NotNil(err)
+
 }

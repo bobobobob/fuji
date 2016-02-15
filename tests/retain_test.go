@@ -1,4 +1,4 @@
-// Copyright 2015 Shiguredo Inc. <fuji@shiguredo.jp>
+// Copyright 2015-2016 Shiguredo Inc. <fuji@shiguredo.jp>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,14 +19,14 @@ import (
 	"testing"
 	"time"
 
-	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
+	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/shiguredo/fuji"
 	"github.com/shiguredo/fuji/broker"
+	"github.com/shiguredo/fuji/config"
 	"github.com/shiguredo/fuji/device"
 	"github.com/shiguredo/fuji/gateway"
-	"github.com/shiguredo/fuji/inidef"
 )
 
 // TestRetainJustPublish tests
@@ -34,29 +34,31 @@ import (
 // 2. send data with retaind flag dummy device normaly
 func TestRetainJustPublish(t *testing.T) {
 	assert := assert.New(t)
-	iniStr := `
+
+	configStr := `
 	[gateway]
 	
-	    name = retainham
+	    name = "retainham"
 	
-	[broker "local/1"]
+	[[broker."local/1"]]
 	
-	    host = localhost
+	    host = "localhost"
 	    port = 1883
 	
-	[device "doraretain/dummy"]
+	[device."doraretain"]
 	
-	    broker = local
+	    type = "dummy"
+	    broker = "local"
 	    qos = 0
 	
 	    interval = 10
-	    payload = Hello world retain true.
-	
-	    type = EnOcean
+	    payload = "Hello world retain true."
 	    retain = true
 `
-	conf, err := inidef.LoadConfigByte([]byte(iniStr))
+
+	conf, err := config.LoadConfigByte([]byte(configStr))
 	assert.Nil(err)
+
 	commandChannel := make(chan string)
 	go fuji.StartByFileWithChannel(conf, commandChannel)
 
@@ -71,30 +73,70 @@ func TestRetainJustPublish(t *testing.T) {
 // 5. subscirbe and receive data
 func TestRetainSubscribePublishClose(t *testing.T) {
 	assert := assert.New(t)
-	iniStr := `
+	configStr := `
 	[gateway]
 	
-	    name = testRetainafterclose
+	    name = "testRetainafterclose"
 	
-	[broker "local/1"]
+	[[broker."local/1"]]
 	
-	    host = localhost
+	    host = "localhost"
 	    port = 1883
 	
-	[device "dora/dummy"]
+	[device."dora"]
 	
-	    broker = local
+	    type = "dummy"
+	    broker = "local"
 	    qos = 0
 	
 	    interval = 10
-	    payload = Hello retained world to subscriber after close.
+	    payload = "Hello retained world to subscriber after close."
 	
-	    type = EnOcean
 	    retain = true
 `
-	commandChannel := make(chan string)
-	conf, err := inidef.LoadConfigByte([]byte(iniStr))
+	conf, err := config.LoadConfigByte([]byte(configStr))
 	assert.Nil(err)
+	isRetain := true
+	generalPubSubTest(t, conf, isRetain)
+}
+
+// TestNoRetainSubscribePublishClose
+// 1. connect gateway to local broker
+// 2. send data without retaind flag from dummy device
+// 3. disconnect
+// 4. reconnect
+// 5. subscirbe and receive data
+func TestNoRetainSubscribePublishClose(t *testing.T) {
+	assert := assert.New(t)
+	configStr := `
+	[gateway]
+	
+	    name = "testNoRetainafterclose"
+	
+	[[broker."local/1"]]
+	
+	    host = "localhost"
+	    port = 1883
+	
+	[device."dora"]
+	
+	    type = "dummy"
+	    broker = "local"
+	    qos = 0
+	
+	    interval = 10
+	    payload = "Hello retained world to subscriber after close."
+`
+	conf, err := config.LoadConfigByte([]byte(configStr))
+	assert.Nil(err)
+	isRetain := false
+	generalPubSubTest(t, conf, isRetain)
+}
+
+func generalPubSubTest(t *testing.T, conf config.Config, isRetain bool) {
+	assert := assert.New(t)
+
+	commandChannel := make(chan string)
 	go fuji.StartByFileWithChannel(conf, commandChannel)
 
 	gw, err := gateway.NewGateway(conf)
@@ -109,7 +151,7 @@ func TestRetainSubscribePublishClose(t *testing.T) {
 
 	devChan := device.NewDeviceChannel()
 	gw.DeviceChannels = append(gw.DeviceChannels, devChan)
-	dummyDevice, err := device.NewDummyDevice(conf.Sections[3], brokerList, devChan)
+	dummyDevice, err := device.NewDummyDevice(conf.Sections[2], brokerList, devChan)
 	if err != nil {
 		t.Error("Cannot make DummyDeviceList")
 	}
@@ -123,25 +165,36 @@ func TestRetainSubscribePublishClose(t *testing.T) {
 		time.Sleep(2 * time.Second)
 
 		subscriberChannel, err := setupRetainSubscriber(gw, brokerList[0], &dummyDevice)
-		if err != inidef.Error("") {
+		if err != config.Error("") {
 			t.Error(err)
 		}
+
 		// check Retained message
-		retainedMessage := <-subscriberChannel
-		retainedTopic := retainedMessage[0]
-		retainedPayload := retainedMessage[1]
+		select {
+		case retainedMessage := <-subscriberChannel:
+			if !isRetain {
+				assert.Equal("retained message arrived", "no retain message shall come")
+			}
+			retainedTopic := retainedMessage[0]
+			retainedPayload := retainedMessage[1]
 
-		expectedTopic := fmt.Sprintf("%s/%s/%s/%s", brokerList[0].TopicPrefix, gw.Name, dummyDevice.Name, dummyDevice.Type)
-		expectedPayload := dummyDevice.Payload
+			expectedTopic := fmt.Sprintf("%s/%s/%s/%s/publish", brokerList[0].TopicPrefix, gw.Name, dummyDevice.Name, dummyDevice.Type)
+			expectedPayload := dummyDevice.Payload
 
-		assert.Equal(expectedTopic, retainedTopic)
-		assert.Equal(expectedPayload, retainedPayload)
+			assert.Equal(expectedTopic, retainedTopic)
+			assert.Equal(expectedPayload, retainedPayload)
+
+		case <-time.After(time.Second * 2):
+			if isRetain {
+				assert.Equal("subscribe completed in 11 sec", "not completed")
+			}
+		}
 	}()
 	time.Sleep(5 * time.Second)
 }
 
 // setupRetainSubscriber returnes channel in order to read messages with retained flag
-func setupRetainSubscriber(gw *gateway.Gateway, broker *broker.Broker, dummyDevice *device.DummyDevice) (chan [2]string, inidef.Error) {
+func setupRetainSubscriber(gw *gateway.Gateway, broker *broker.Broker, dummyDevice *device.DummyDevice) (chan [2]string, config.Error) {
 	// Setup MQTT pub/sub client to confirm published content.
 	//
 	messageOutputChannel := make(chan [2]string)
@@ -157,16 +210,16 @@ func setupRetainSubscriber(gw *gateway.Gateway, broker *broker.Broker, dummyDevi
 
 	client := MQTT.NewClient(opts)
 	if client == nil {
-		return nil, inidef.Error("NewClient failed")
+		return nil, config.Error("NewClient failed")
 	}
 
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		return nil, inidef.Error(fmt.Sprintf("NewClient Start failed %q", token.Error()))
+		return nil, config.Error(fmt.Sprintf("NewClient Start failed %q", token.Error()))
 	}
 	qos := 0
-	retainedTopic := fmt.Sprintf("%s/%s/%s/%s", broker.TopicPrefix, gw.Name, dummyDevice.Name, dummyDevice.Type)
+	retainedTopic := fmt.Sprintf("%s/%s/%s/%s/publish", broker.TopicPrefix, gw.Name, dummyDevice.Name, dummyDevice.Type)
 	client.Subscribe(retainedTopic, byte(qos), func(client *MQTT.Client, msg MQTT.Message) {
 	})
 
-	return messageOutputChannel, inidef.Error("")
+	return messageOutputChannel, config.Error("")
 }

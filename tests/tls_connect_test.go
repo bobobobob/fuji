@@ -29,21 +29,48 @@ import (
 	"github.com/shiguredo/fuji/gateway"
 )
 
-// publish test to broker on localhost
-// dummydevice is used as a source of published message
-func TestConnectLocalPub(t *testing.T) {
+var configStr = `
+[gateway]
 
-	go fuji.Start("connect.toml")
+    name = "hamlocalconnect"
 
+[[broker."mosquitto/1"]]
+
+    host = "localhost"
+    port = 8883
+    tls = true
+    cacert = "mosquitto/ca.pem"
+
+    retry_interval = 10
+
+
+[device."dora"]
+    type = "dummy"
+
+    broker = "mosquitto"
+    qos = 0
+
+    interval = 10
+    payload = "connect local pub only Hello world."
+`
+
+// TestTLSConnectLocalPub
+func TestTLSConnectLocalPub(t *testing.T) {
+	assert := assert.New(t)
+
+	conf, err := config.LoadConfigByte([]byte(configStr))
+	assert.Nil(err)
+	commandChannel := make(chan string)
+	go fuji.StartByFileWithChannel(conf, commandChannel)
 	time.Sleep(2 * time.Second)
-	return
+
 }
 
-// TestConnectLocalPubSub tests
-// 1. connect gateway to local broker
+// TestTLSConnectLocalPubSub
+// 1. connect gateway to local broker with TLS
 // 2. send data from dummy
 // 3. check subscribe
-func TestConnectLocalPubSub(t *testing.T) {
+func TestTLSConnectLocalPubSub(t *testing.T) {
 	assert := assert.New(t)
 
 	// pub/sub test to broker on localhost
@@ -51,7 +78,7 @@ func TestConnectLocalPubSub(t *testing.T) {
 	// publised messages confirmed by subscriber
 
 	// get config
-	conf, err := config.LoadConfig("connect.toml")
+	conf, err := config.LoadConfigByte([]byte(configStr))
 	assert.Nil(err)
 
 	// get Gateway
@@ -72,21 +99,26 @@ func TestConnectLocalPubSub(t *testing.T) {
 	subscriberChannel := make(chan [2]string)
 
 	opts := MQTT.NewClientOptions()
-	url := fmt.Sprintf("tcp://%s:%d", brokerList[0].Host, brokerList[0].Port)
+	url := fmt.Sprintf("ssl://%s:%d", brokerList[0].Host, brokerList[0].Port)
 	opts.AddBroker(url)
 	opts.SetClientID(fmt.Sprintf("prefix%s", gw.Name))
 	opts.SetCleanSession(false)
+
+	tlsConfig, err := broker.NewTLSConfig(brokerList[0])
+	assert.Nil(err)
+	opts.SetTLSConfig(tlsConfig)
 
 	client := MQTT.NewClient(opts)
 	assert.Nil(err)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		assert.Nil(token.Error())
+		t.Log(token.Error())
 	}
 
 	qos := 0
 	expectedTopic := fmt.Sprintf("/%s/%s/%s/publish", gw.Name, dummyDevice.Name, dummyDevice.Type)
 	expectedMessage := fmt.Sprintf("%s", dummyDevice.Payload)
-	fmt.Printf("expetcted topic: %s\nexpected message%s", expectedTopic, expectedMessage)
+	t.Logf("expetcted topic: %s\nexpected message%s", expectedTopic, expectedMessage)
 	client.Subscribe(expectedTopic, byte(qos), func(client *MQTT.Client, msg MQTT.Message) {
 		subscriberChannel <- [2]string{msg.Topic(), string(msg.Payload())}
 	})

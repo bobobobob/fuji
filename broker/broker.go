@@ -1,4 +1,4 @@
-// Copyright 2015 Shiguredo Inc. <fuji@shiguredo.jp>
+// Copyright 2015-2016 Shiguredo Inc. <fuji@shiguredo.jp>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,13 +24,17 @@ import (
 	"strconv"
 	"strings"
 
-	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
 	log "github.com/Sirupsen/logrus"
+	MQTT "github.com/eclipse/paho.mqtt.golang"
 	validator "gopkg.in/validator.v2"
 
-	"github.com/shiguredo/fuji/inidef"
+	"github.com/shiguredo/fuji/config"
 	"github.com/shiguredo/fuji/message"
 	"github.com/shiguredo/fuji/utils"
+)
+
+const (
+	defaultWillTopic = "will"
 )
 
 type Broker struct {
@@ -43,9 +47,13 @@ type Broker struct {
 	Password      string `validate:"max=256"`
 	RetryInterval int    `validate:"min=0"`
 	TopicPrefix   string `validate:"max=256"`
+	IsWill        bool
 	WillMessage   []byte `validate:"max=256"`
+	WillTopic     string `validate:"max=256,validtopic"`
 	Tls           bool
 	CaCert        string `validate:"max=256"`
+	ClientCert    string `validate:"max=256"`
+	ClientKey     string `validate:"max=256"`
 	TLSConfig     *tls.Config
 	Subscribed    Subscribed // list of subscribed topics
 
@@ -75,35 +83,47 @@ func (bs Brokers) Less(i, j int) bool {
 
 // init is automatically invoked at initial time.
 func init() {
-	validator.SetValidationFunc("validtopic", inidef.ValidMqttPublishTopic)
+	validator.SetValidationFunc("validtopic", config.ValidMqttPublishTopic)
 }
 
 // NewTLSConfig returns TLS config from CA Cert file path.
-func NewTLSConfig(caCertFilePath string) (*tls.Config, error) {
+func NewTLSConfig(b *Broker) (*tls.Config, error) {
 	certPool := x509.NewCertPool()
-	pemCerts, err := ioutil.ReadFile(caCertFilePath)
+	pemCerts, err := ioutil.ReadFile(b.CaCert)
 	if err != nil {
-		return nil, inidef.Error("Cert File could not be read.")
+		return nil, config.Error(fmt.Sprintf("Cert File: %s could not be read.", b.CaCert))
 	}
 	appendCertOk := certPool.AppendCertsFromPEM(pemCerts)
 	if appendCertOk != true {
-		return nil, inidef.Error("Server Certificate parse failed")
+		return nil, config.Error("Server Certificate parse failed")
 	}
-
-	// only server certificate checked
-	return &tls.Config{
+	ret := &tls.Config{
 		RootCAs:    certPool,
 		ClientAuth: tls.NoClientCert,
 		ClientCAs:  nil,
 		// InsecureSkipVerify = verify that cert contents
 		// match server. IP matches what is in cert etc.
 		InsecureSkipVerify: true,
-	}, nil
+	}
+	if b.ClientCert != "" {
+		if b.ClientKey == "" {
+			return nil, config.Error("Client certificate requires private key")
+		}
+		// client certificate also checked
+		cert, err := tls.LoadX509KeyPair(b.ClientCert, b.ClientKey)
+		if err != nil {
+			return nil, err
+		}
+		ret.ClientAuth = tls.RequireAndVerifyClientCert
+		ret.Certificates = []tls.Certificate{cert}
+		ret.ClientCAs = certPool
+	}
+	return ret, nil
 }
 
-// NewBrokers returns []*Broker from inidef.Config.
+// NewBrokers returns []*Broker from config.Config.
 // If validation failes, retrun error.
-func NewBrokers(conf inidef.Config, gwChan chan message.Message) (Brokers, error) {
+func NewBrokers(conf config.Config, gwChan chan message.Message) (Brokers, error) {
 	var brokers Brokers
 
 	for _, section := range conf.Sections {
@@ -123,6 +143,7 @@ func NewBrokers(conf inidef.Config, gwChan chan message.Message) (Brokers, error
 			Username:      values["username"],
 			Password:      values["password"],
 			TopicPrefix:   values["topic_prefix"],
+			IsWill:        false,
 			WillMessage:   willMsg,
 			Tls:           false,
 			CaCert:        "",
@@ -130,6 +151,19 @@ func NewBrokers(conf inidef.Config, gwChan chan message.Message) (Brokers, error
 			Subscribed:    NewSubscribed(),
 			GwChan:        gwChan,
 		}
+
+		for k, v := range values {
+			if k == "will_message" {
+				broker.IsWill = true
+				w, err := utils.ParsePayload(v)
+				if err != nil {
+					log.Warnf("parse error will_message, %v", err)
+				}
+				log.Debugf("will_message, %v", w)
+				broker.WillMessage = w
+			}
+		}
+
 		priority := 1
 		if section.Arg != "" {
 			priority, err = strconv.Atoi(section.Arg)
@@ -155,16 +189,33 @@ func NewBrokers(conf inidef.Config, gwChan chan message.Message) (Brokers, error
 			}
 		}
 
-		if values["tls"] == "true" && values["cacert"] != "" {
-			// validate certificate
+		if values["tls"] == "true" {
+			if values["cacert"] == "" {
+				return nil, fmt.Errorf("cacert must be set")
+			}
 			broker.Tls = true
 			broker.CaCert = values["cacert"]
-			broker.TLSConfig, err = NewTLSConfig(broker.CaCert)
+
+			// check client certificate
+			if values["client_cert"] != "" && values["client_key"] != "" {
+				// client certificate authentication
+
+				broker.ClientCert = values["client_cert"]
+				broker.ClientKey = values["client_key"]
+			}
+
+			// validate certificate
+			broker.TLSConfig, err = NewTLSConfig(broker)
 			if err != nil {
 				return nil, err
 			}
 		}
 
+		if values["will_topic"] != "" {
+			broker.WillTopic = strings.Join([]string{broker.TopicPrefix, values["will_topic"]}, "/")
+		} else {
+			broker.WillTopic = strings.Join([]string{broker.TopicPrefix, broker.GatewayName, defaultWillTopic}, "/")
+		}
 		// Validation
 		if err := validator.Validate(broker); err != nil {
 			return brokers, err
@@ -262,7 +313,7 @@ func (b *Broker) GenerateTopic(msg *message.Message) (message.TopicString, error
 	case "status": // status device topic structure is difference
 		topicString = strings.Join([]string{b.TopicPrefix, msg.Topic}, "/")
 	default:
-		topicString = strings.Join([]string{b.TopicPrefix, b.GatewayName, msg.Sender, msg.Type}, "/")
+		topicString = strings.Join([]string{b.TopicPrefix, b.GatewayName, msg.Sender, msg.Type, "publish"}, "/")
 	}
 
 	topic := message.TopicString{
@@ -308,8 +359,8 @@ func MQTTConnect(gwName string, b *Broker) (*MQTT.Client, error) {
 
 	opts.SetUsername(b.Username)
 	opts.SetPassword(b.Password)
-	if !inidef.IsNil(b.WillMessage) {
-		willTopic := strings.Join([]string{b.TopicPrefix, gwName, "will"}, "/")
+	if b.IsWill {
+		willTopic := b.WillTopic
 		willQoS := 0
 		opts.SetBinaryWill(willTopic, b.WillMessage, byte(willQoS), true)
 	}

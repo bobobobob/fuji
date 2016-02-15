@@ -1,4 +1,4 @@
-// Copyright 2015 Shiguredo Inc. <fuji@shiguredo.jp>
+// Copyright 2015-2016 Shiguredo Inc. <fuji@shiguredo.jp>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,114 +20,118 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/shiguredo/fuji/broker"
-	"github.com/shiguredo/fuji/inidef"
+	"github.com/shiguredo/fuji/config"
 )
 
 func TestNewSerialDevice(t *testing.T) {
 	assert := assert.New(t)
 
-	iniStr := `
-[device "dora/serial"]
-    broker = sango
+	configStr := `
+[device."dora"]
+    type = "serial"
+    broker = "sango"
     qos = 1
-    serial = /dev/tty.ble
+    serial = "/dev/tty.ble"
     baud = 9600
     size = 4
-    type = BLE
 `
-	conf, err := inidef.LoadConfigByte([]byte(iniStr))
+	conf, err := config.LoadConfigByte([]byte(configStr))
 	b1 := &broker.Broker{Name: "sango"}
 	brokers := []*broker.Broker{b1}
-	b, err := NewSerialDevice(conf.Sections[1], brokers, NewDeviceChannel())
+	b, err := NewSerialDevice(conf.Sections[0], brokers, NewDeviceChannel())
 	assert.Nil(err)
 	assert.NotNil(b.Broker)
 	assert.Equal("dora", b.Name)
 	assert.Equal(byte(1), b.QoS)
 	assert.Equal(4, b.Size)
-	assert.Equal("BLE", b.Type)
+	assert.Equal("serial", b.Type)
 }
 
 func TestNewSerialDeviceNotSetSize(t *testing.T) {
 	assert := assert.New(t)
 
-	iniStr := `
-[device "dora/serial"]
-    broker = sango
+	configStr := `
+[device."dora"]
+    type = "serial"
+    broker = "sango"
     qos = 1
-    serial = /dev/tty.ble
+    serial = "/dev/tty.ble"
     baud = 9600
-    type = BLE
 `
-	conf, err := inidef.LoadConfigByte([]byte(iniStr))
+	conf, err := config.LoadConfigByte([]byte(configStr))
 	b1 := &broker.Broker{Name: "sango"}
 	brokers := []*broker.Broker{b1}
-	b, err := NewSerialDevice(conf.Sections[1], brokers, NewDeviceChannel())
+	b, err := NewSerialDevice(conf.Sections[0], brokers, NewDeviceChannel())
 	assert.Nil(err)
 	assert.NotNil(b.Broker)
 	assert.Equal("dora", b.Name)
 	assert.Equal(0, b.Size)
-	assert.Equal("BLE", b.Type)
+	assert.Equal("serial", b.Type)
 }
 
 func TestNewSerialDeviceInvalidInterval(t *testing.T) {
 	assert := assert.New(t)
 
-	iniStr := `
-[device "dora/serial"]
-    broker = sango
+	configStr := `
+[device."dora"]
+    type = "serial"
+    broker = "sango"
     interval = -1
     qos = 1
 `
-	conf, err := inidef.LoadConfigByte([]byte(iniStr))
+	conf, err := config.LoadConfigByte([]byte(configStr))
 	b1 := &broker.Broker{Name: "sango"}
 	brokers := []*broker.Broker{b1}
-	_, err = NewSerialDevice(conf.Sections[1], brokers, NewDeviceChannel())
+	_, err = NewSerialDevice(conf.Sections[0], brokers, NewDeviceChannel())
 	assert.NotNil(err)
 }
 
 func TestNewSerialDeviceInvalidQoS(t *testing.T) {
 	assert := assert.New(t)
 
-	iniStr := `
-[device "dora/serial"]
-    broker = sango
+	configStr := `
+[device."dora"]
+    type = "serial"
+    broker = "sango"
     qos = -1
 `
-	conf, err := inidef.LoadConfigByte([]byte(iniStr))
+	conf, err := config.LoadConfigByte([]byte(configStr))
 	b1 := &broker.Broker{Name: "sango"}
 	brokers := []*broker.Broker{b1}
-	_, err = NewSerialDevice(conf.Sections[1], brokers, NewDeviceChannel())
+	_, err = NewSerialDevice(conf.Sections[0], brokers, NewDeviceChannel())
 	assert.NotNil(err)
 }
 
 func TestNewSerialDeviceInvalidBroker(t *testing.T) {
 	assert := assert.New(t)
 
-	iniStr := `
-[device "dora/serial"]
-    broker = doesNotExist
+	configStr := `
+[device."dora"]
+    type = "serial"
+    broker = "doesNotExist"
     qos = 1
 `
-	conf, err := inidef.LoadConfigByte([]byte(iniStr))
+	conf, err := config.LoadConfigByte([]byte(configStr))
 	b1 := &broker.Broker{Name: "sango"}
 	brokers := []*broker.Broker{b1}
-	_, err = NewSerialDevice(conf.Sections[1], brokers, NewDeviceChannel())
+	_, err = NewSerialDevice(conf.Sections[0], brokers, NewDeviceChannel())
 	assert.NotNil(err)
 }
 
 func TestNewSerialDeviceInvalidBaud(t *testing.T) {
 	assert := assert.New(t)
 
-	iniStr := `
-[device "dora/serial"]
-    broker = sango
+	configStr := `
+[device."dora"]
+    type = "serial"
+    broker = "sango"
     qos = -1
     baud = -9600
 `
-	conf, err := inidef.LoadConfigByte([]byte(iniStr))
+	conf, err := config.LoadConfigByte([]byte(configStr))
 	b1 := &broker.Broker{Name: "sango"}
 	brokers := []*broker.Broker{b1}
-	_, err = NewSerialDevice(conf.Sections[1], brokers, NewDeviceChannel())
+	_, err = NewSerialDevice(conf.Sections[0], brokers, NewDeviceChannel())
 	assert.NotNil(err)
 }
 

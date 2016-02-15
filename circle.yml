@@ -10,7 +10,7 @@ machine:
     PATH: "/home/ubuntu/go/bin:${PATH}:${GOPATH}/bin"
     GO15VENDOREXPERIMENT: 1
     GOROOT: "/home/ubuntu/go"
-    GOVERSION: "1.5.1"
+    GOVERSION: "1.5.3"
   services:
     - docker
 
@@ -18,19 +18,23 @@ dependencies:
   cache_directories:
     - "/home/ubuntu/go"
   override:
+    - CURRENTGOVERSION=`go version | awk '{print $3}'`
     - if [[ ! -e /home/ubuntu/go/bin/go ]]; then cd /home/ubuntu; curl https://storage.googleapis.com/golang/go${GOVERSION}.linux-amd64.tar.gz | tar -xz; fi
+    - if [[ "go${GOVERSION}" != ${CURRENTGOVERSION} ]]; then cd /home/ubuntu; rm -rf go; curl https://storage.googleapis.com/golang/go${GOVERSION}.linux-amd64.tar.gz | tar -xz; fi
     - rm -rf ${GOPATH}/src/${REPO_PATH}
     - mkdir -p ${GOPATH}/src/${ORG_PATH}
     - cp -r ../fuji ${GOPATH}/src/${ORG_PATH}
-    - go get github.com/kr/godep
+    - go get github.com/tools/godep
     - cd ${GOPATH}/src/${REPO_PATH} && godep restore
 
 test:
   override:
     - go version
     - go get -u github.com/mitchellh/gox
-    - docker run -d -p 1883:1883 shiguredo/mosquitto /usr/local/sbin/mosquitto ; sleep 20
+    - docker run -d -p 1883:1883 -p 8883:8883 -p 9883:9883 -p 8080:8080 -v /home/ubuntu/.go_workspace/src/github.com/shiguredo/fuji/tests/mosquitto:/mosquitto --name fuji-test-mosquitto shiguredo/mosquitto ; sleep 20
     - godep go build:
+        pwd: ../.go_workspace/src/${REPO_PATH}
+    - make build:
         pwd: ../.go_workspace/src/${REPO_PATH}
     - godep go test -coverpkg github.com/shiguredo/fuji ./...:
         pwd: ../.go_workspace/src/${REPO_PATH}

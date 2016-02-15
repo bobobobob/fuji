@@ -1,4 +1,4 @@
-// Copyright 2015 Shiguredo Inc. <fuji@shiguredo.jp>
+// Copyright 2015-2016 Shiguredo Inc. <fuji@shiguredo.jp>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,43 +20,43 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/shiguredo/fuji/broker"
+	"github.com/shiguredo/fuji/config"
 	"github.com/shiguredo/fuji/device"
 	"github.com/shiguredo/fuji/gateway"
-	"github.com/shiguredo/fuji/inidef"
 	"github.com/shiguredo/fuji/message"
 )
 
-func TestIniLoadini(t *testing.T) {
+func TestLoadConfig(t *testing.T) {
 	assert := assert.New(t)
 
-	_, err := inidef.LoadConfig("testing_conf.ini")
+	_, err := config.LoadConfig("testing_conf.toml")
 	assert.Nil(err)
 }
 
-func TestIniNewGateway(t *testing.T) {
+func TestNewGateway(t *testing.T) {
 	assert := assert.New(t)
 
-	conf, err := inidef.LoadConfig("testing_conf.ini")
+	conf, err := config.LoadConfig("testing_conf.toml")
 	assert.Nil(err)
 	gw, err := gateway.NewGateway(conf)
 	assert.Nil(err)
 	assert.Equal("ham", gw.Name)
 }
 
-func TestIniNewBrokers(t *testing.T) {
+func TestNewBrokers(t *testing.T) {
 	assert := assert.New(t)
 
-	conf, err := inidef.LoadConfig("testing_conf.ini")
+	conf, err := config.LoadConfig("testing_conf.toml")
 	assert.Nil(err)
 	brokerList, err := broker.NewBrokers(conf, make(chan message.Message))
 	assert.Nil(err)
 	assert.Equal(3, len(brokerList))
 }
 
-func TestIniNewSerialDevices(t *testing.T) {
+func TestNewSerialDevices(t *testing.T) {
 	assert := assert.New(t)
 
-	conf, err := inidef.LoadConfig("testing_conf.ini")
+	conf, err := config.LoadConfig("testing_conf.toml")
 	brokerList, err := broker.NewBrokers(conf, make(chan message.Message))
 	assert.Nil(err)
 	deviceList, _, err := device.NewDevices(conf, brokerList)
@@ -64,14 +64,17 @@ func TestIniNewSerialDevices(t *testing.T) {
 	assert.Equal(3, len(deviceList))
 }
 
-func TestIniNewDummyDevice(t *testing.T) {
+func TestNewDummyDevice(t *testing.T) {
 	assert := assert.New(t)
 
-	conf, err := inidef.LoadConfig("testing_conf.ini")
+	conf, err := config.LoadConfig("testing_conf.toml")
 	brokerList, err := broker.NewBrokers(conf, make(chan message.Message))
 	assert.Nil(err)
 
-	dummy, err := device.NewDummyDevice(conf.Sections[7], brokerList, device.NewDeviceChannel())
+	section := config.SearchDeviceType(&conf.Sections, "dummy")
+	assert.NotNil(section)
+
+	dummy, err := device.NewDummyDevice(*section, brokerList, device.NewDeviceChannel())
 	assert.Nil(err)
 	assert.Equal("dummy", dummy.DeviceType())
 	assert.Equal(2, int(dummy.QoS))

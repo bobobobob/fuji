@@ -1,0 +1,44 @@
+[gateway]
+
+    name = "ham"
+
+    max_retry_count = 7
+    retry_interval = 3  # sec
+
+[[broker."sango/1"]]
+
+    host = "localhost"
+    port = 1883
+
+    username = "YOURUSERNAME"
+    password = "YOURPASSWORD"
+
+    retry_interval = 10
+    topic_prefix = "sometextforprefix"
+
+
+[device."dora"]
+
+    type = "dummy"
+    broker = "sango"
+    qos = 0
+
+    interval = 30
+    payload = "Hello world."
+
+[status]
+
+    broker = "sango"
+    interval = 10
+
+[[status."cpu"]]
+
+    cpu_times = "user, system, idle, nice, iowait, irq, softirq, guest"
+
+[[status."memory"]]
+
+    virtual_memory = "total, available, percent, used, free"
+
+[[status."ip_address"]]
+
+    interface = "all"

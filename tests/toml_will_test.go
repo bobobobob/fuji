@@ -1,4 +1,4 @@
-// Copyright 2015 Shiguredo Inc. <fuji@shiguredo.jp>
+// Copyright 2015-2016 Shiguredo Inc. <fuji@shiguredo.jp>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,44 +20,44 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/shiguredo/fuji/broker"
-	"github.com/shiguredo/fuji/inidef"
+	"github.com/shiguredo/fuji/config"
 	"github.com/shiguredo/fuji/message"
 )
 
-type iniWillTestCase struct {
-	iniStr        string          // testcase config file
-	expectedError inidef.AnyError // expected error status
+type configWillTestCase struct {
+	configStr     string          // testcase config file
+	expectedError config.AnyError // expected error status
 	message       string          // message when failed
 }
 
-var testcases = []iniWillTestCase{
+var testcases = []configWillTestCase{
 	// tests broker validation without will_message
 	{
-		iniStr: `
-                [broker "sango/1"]
+		configStr: `
+                [[broker."sango/1"]]
 
-                    host = localhost
+                    host = "localhost"
                     port = 1883
 `,
 		expectedError: nil,
 		message:       "WillMessage could not be omitted. Shall be optional."},
 	// tests broker validation with will_message
 	{
-		iniStr: `
-                [broker "sango/1"]
+		configStr: `
+                [[broker."sango/1"]]
 
-                    host = localhost
+                    host = "localhost"
                     port = 1883
-		    will_message = Hello world.
+		    will_message = "Hello world."
 `,
 		expectedError: nil,
 		message:       "WillMessage could not be defined."},
 	// tests broker validation with empty will_message
 	{
-		iniStr: `
-                [broker "sango/1"]
+		configStr: `
+                [[broker."sango/1"]]
 
-                    host = localhost
+                    host = "localhost"
                     port = 1883
 		    will_message = ""
 `,
@@ -65,43 +65,43 @@ var testcases = []iniWillTestCase{
 		message:       "Empty WillMessage could not be defined."},
 	// tests multiple broker validation with only one will_message
 	{
-		iniStr: `
-                [broker "sango/1"]
+		configStr: `
+                [[broker."sango/1"]]
 
-                    host = localhost
+                    host = "localhost"
                     port = 1883
 
-                [broker "sango/2"]
+                [[broker."sango/2"]]
 
-                    host = 192.168.1.1 
+                    host = "192.168.1.1 "
                     port = 1883
-		    will_message = Hello world.
+		    will_message = "Hello world."
 `,
 		expectedError: nil,
 		message:       "WillMessage could not be defined for one of two."},
 	// tests multiple broker validation with both will_message
 	{
-		iniStr: `
-                [broker "sango/1"]
+		configStr: `
+                [[broker."sango/1"]]
 
-                    host = localhost
+                    host = "localhost"
                     port = 1883
-		    will_message = Change the world.
+		    will_message = "Change the world."
 
-                [broker "sango/2"]
+                [[broker."sango/2"]]
 
-                    host = 192.168.1.1 
+                    host = "192.168.1.1"
                     port = 1883
-		    will_message = Hello world.
+		    will_message = "Hello world."
 `,
 		expectedError: nil,
 		message:       "WillMessage could not be defined for both of two."},
 }
 
-func generalIniWillTest(test iniWillTestCase, t *testing.T) {
+func generalConfigWillTest(test configWillTestCase, t *testing.T) {
 	assert := assert.New(t)
 
-	conf, err := inidef.LoadConfigByte([]byte(test.iniStr))
+	conf, err := config.LoadConfigByte([]byte(test.configStr))
 	assert.Nil(err)
 
 	brokers, err := broker.NewBrokers(conf, make(chan message.Message))
@@ -109,8 +109,8 @@ func generalIniWillTest(test iniWillTestCase, t *testing.T) {
 	assert.NotEqual(0, len(brokers))
 }
 
-func TestIniWillAll(t *testing.T) {
+func TestConfigWillAll(t *testing.T) {
 	for _, testcase := range testcases {
-		generalIniWillTest(testcase, t)
+		generalConfigWillTest(testcase, t)
 	}
 }

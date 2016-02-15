@@ -1,4 +1,4 @@
-// Copyright 2015 Shiguredo Inc. <fuji@shiguredo.jp>
+// Copyright 2015-2016 Shiguredo Inc. <fuji@shiguredo.jp>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import (
 	validator "gopkg.in/validator.v2"
 
 	"github.com/shiguredo/fuji/broker"
-	"github.com/shiguredo/fuji/inidef"
+	"github.com/shiguredo/fuji/config"
 	"github.com/shiguredo/fuji/message"
 	"github.com/shiguredo/fuji/utils"
 )
@@ -50,7 +50,7 @@ func (dummyDevice *DummyDevice) String() string {
 }
 
 // NewDummyDevice creates dummy device which outputs specified string/binary payload.
-func NewDummyDevice(section inidef.ConfigSection, brokers []*broker.Broker, devChan DeviceChannel) (DummyDevice, error) {
+func NewDummyDevice(section config.ConfigSection, brokers []*broker.Broker, devChan DeviceChannel) (DummyDevice, error) {
 	ret := DummyDevice{
 		Name:       section.Name,
 		DeviceChan: devChan,
@@ -107,7 +107,7 @@ func NewDummyDevice(section inidef.ConfigSection, brokers []*broker.Broker, devC
 
 func (device *DummyDevice) Validate() error {
 	validator := validator.NewValidator()
-	validator.SetValidationFunc("validtopic", inidef.ValidMqttPublishTopic)
+	validator.SetValidationFunc("validtopic", config.ValidMqttPublishTopic)
 	if err := validator.Validate(device); err != nil {
 		return err
 	}

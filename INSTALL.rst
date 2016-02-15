@@ -2,7 +2,7 @@
 MQTT gateway 'Fuji' Install Instruction
 #######################################
 
-:version: 0.2.3
+:version: 1.0.0
 
 Install
 ============
@@ -15,49 +15,49 @@ x86_64 Linux
 
 #. Download tar.gz file
 #. Extract tar.gz file
-#. A executable binary will be placed at ./fuji/fuji-gw. A sample config files is ./fuji/config.ini.example.
+#. A executable binary will be placed at ./fuji/fuji-gw. A sample config files is ./fuji/config.toml.example.
 
 ::
 
-    $ tar xvfz fuji-gw_0.2.3_linux_amd64.tar.gz
+    $ tar xvfz fuji-gw_1.0.0_linux_amd64.tar.gz
 
 
 For Raspberry Pi (Raspbian)
 --------------------------------------
 
-:Package: fuji-gw_0.2.3_raspi_arm6.deb
+:Package: fuji-gw_1.0.0_raspi_arm6.deb
 
 #. Download a package
 #. Install by `dpkg -i`
-#. A executable binary will be placed at /usr/local/bin/fuji-gw. A sample config file is /etc/fuji-gw/config.ini.
+#. A executable binary will be placed at /usr/local/bin/fuji-gw. A sample config file is /etc/fuji-gw/config.toml.
 #. Auto start file is setup as /etc/init.d/fuji-gw.
-#. Once you setup /etc/fuji-gw/config.ini correctly, fuji-gw process automatically starts after reboot.
+#. Once you setup /etc/fuji-gw/config.toml correctly, fuji-gw process automatically starts after reboot.
 
 Note: The fuji-gw process runs as a root. 
 
 ::
 
-    $ dpkg -i fuji-gw_0.2.3_raspi_arm6.deb
+    $ dpkg -i fuji-gw_1.0.0_raspi_arm6.deb
     $ dpkg -i fuji-gw_<Version>_raspi_arm6.deb
 
 For Raspberry Pi 2(Raspbian)
 -----------------------------
 
-:Package: fuji-gw_0.2.3_raspi2_arm7.deb
+:Package: fuji-gw_1.0.0_raspi2_arm7.deb
 
 #. Download a package
 #. Install by `dpkg -i`
-#. A executable binary will be placed at /usr/local/bin/fuji-gw. A sample config file is /etc/fuji-gw/config.ini.
+#. A executable binary will be placed at /usr/local/bin/fuji-gw. A sample config file is /etc/fuji-gw/config.toml.
 
 ::
 
-    $ dpkg -i fuji-gw_0.2.3_raspi2_arm7.deb
-    $ fuji-gw -c /etc/fuji-gw/config.ini
+    $ dpkg -i fuji-gw_1.0.0_raspi2_arm7.deb
+    $ fuji-gw -c /etc/fuji-gw/config.toml
 
 For Armadillo-IoT
 --------------------
 
-:tar.gz File: fuji-gw_0.2.3_arm5.tar.gz
+:tar.gz File: fuji-gw_1.0.0_arm5.tar.gz
 
 (Note:) If you want to embed Fuji to startup image, please refer `Armadillo-IoT Gateway Standard manual <http://manual.atmark-techno.com/armadillo-iot/armadillo-iotg-std_product_manual_ja-1.1.1/>`_ of Atmark-Techno.
 
@@ -80,17 +80,17 @@ For Armadillo-IoT
     ftp> cd pub
     ftp> binary
     ftp> put fuji-gw
-    ftp> put config.ini.example
+    ftp> put config.toml.example
 
 For Intel Edison
 -------------------
 
-:Package: fuji-gw_0.2.3_edison_386.ipk
+:Package: fuji-gw_1.0.0_edison_386.ipk
 
 #. Login to Intel Edison
 #. Download package          
 #. Install using `opkg install` command.
-#. A executable binary will be placed at ./fuji/fuji-gw. A sample config files is ./fuji/config.ini.example.
+#. A executable binary will be placed at ./fuji/fuji-gw. A sample config files is ./fuji/config.toml.example.
 
 ::
 
@@ -122,31 +122,31 @@ Config file
 In this config file, we use dummy device function of Fuji. A dummy device can send some static data to MQTT Broker same as an Sensor.
 Since all user can use only topic under `<username>/#` on the Sango, set `topic_prefix` value as is.
 
-.. code-block:: ini
+.. code-block:: toml
 
     [gateway]
     
-        name = fuji
+        name = "fuji"
     
-    [broker "sango"]
+    [[broker."sango"]]
     
-        host = <sango hostname>
+        host = "<sango hostname>"
         port = 1883
     
-        username = <sango username>
-        password = <sango password>
+        username = "<sango username>"
+        password = "<sango password>"
     
         retry_interval = 10
-        topic_prefix = <sango username>
+        topic_prefix = "<sango username>"
     
     
-    [device "test/dummy"]
+    [device."test/dummy"]
     
-        broker = sango
+        broker = "sango"
         qos = 0
     
         interval = 10
-        payload = Hello MQTT.
+        payload = "Hello MQTT."
     
         type = Dummy
 
@@ -167,33 +167,33 @@ This example is set like below.
 - password: pass
 
 
-.. code-block:: ini
+.. code-block:: toml
 
     [gateway]
     
-        name = fuji
+        name = "fuji"
     
-    [broker "sango"]
+    [[broker."sango"]]
     
-        host = sango.example.com
+        host = "sango.example.com"
         port = 1883
     
-        username = shiguredo
-        password = pass
+        username = "shiguredo"
+        password = "pass"
     
         retry_interval = 10
-        topic_prefix = shiguredo@github
+        topic_prefix = "shiguredo@github"
     
     
-    [device "test/dummy"]
+    [device."test/dummy"]
     
-        broker = sango
+        broker = "sango"
         qos = 0
     
         interval = 10
-        payload = Hello MQTT.
+        payload = "Hello MQTT."
     
-        type = Dummy
+        type = "Dummy"
     
 
 

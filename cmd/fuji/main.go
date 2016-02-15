@@ -1,4 +1,4 @@
-// Copyright 2015 Shiguredo Inc. <fuji@shiguredo.jp>
+// Copyright 2015-2016 Shiguredo Inc. <fuji@shiguredo.jp>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ func main() {
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:   "conf, c",
-			Value:  "/etc/fuji-gw/config.ini",
+			Value:  "/etc/fuji-gw/config.toml",
 			Usage:  "config filepath",
 			EnvVar: "FUJI_CONFIG_FILE",
 		},
@@ -57,7 +57,7 @@ func main() {
 func printVersion(c *cli.Context) {
 	fmt.Fprintf(c.App.Writer, `%v version %v
 Compiler: %s %s
-Copyright 2015 Shiguredo Inc. <fuji@shiguredo.jp>
+Copyright 2015-2016 Shiguredo Inc. <fuji@shiguredo.jp>
 `,
 		c.App.Name,
 		c.App.Version,
