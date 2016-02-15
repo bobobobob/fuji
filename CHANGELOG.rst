@@ -14,7 +14,7 @@ FIX
 1.0.0
 =====
 
-:release: 2016-02-17
+:release: 2016-02-15
 
 UPDATE
 
