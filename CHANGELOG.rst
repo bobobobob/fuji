@@ -11,6 +11,15 @@ CHANGE
 FIX
 	bug fix
 
+1.0.1
+=====
+
+:release: 2016-02-29
+
+UPDATE
+
+- build: Golang version 1.6
+
 1.0.0
 =====
 
