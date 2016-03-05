@@ -29,7 +29,7 @@ doc: fmt
 	go build github.com/shiguredo/fuji/cmd/fuji
 	godoc github.com/shiguredo/fuji
 
-build: fmt deps
+build: deps
 #	golint ./...
 	go build
 	go build $(LDFLAGS) github.com/shiguredo/fuji/cmd/fuji
@@ -151,7 +151,7 @@ deps:
 	go get -u github.com/mitchellh/gox
 	go get github.com/kr/pty
 #	go get -u github.com/golang/lint/golint
-	godep restore
+	glide install
 
 clean:
 	rm -f fuji
