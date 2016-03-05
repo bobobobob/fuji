@@ -24,7 +24,7 @@ dependencies:
     - rm -rf ${GOPATH}/src/${REPO_PATH}
     - mkdir -p ${GOPATH}/src/${ORG_PATH}
     - cp -r ../fuji ${GOPATH}/src/${ORG_PATH}
-    - go get -u github.com/Masterminds/glide
+    - go get github.com/Masterminds/glide
     - cd ${GOPATH}/src/${REPO_PATH} && glide install
 
 test:
