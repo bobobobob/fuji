@@ -14,6 +14,7 @@ REV=`git rev-parse HEAD | cut -c1-7`
 ARTIFACTS=downloads
 BUILDDIR=build
 LDFLAGS=-ldflags "-X main.version=${TAG}-${REV}"
+TARGETS_FMT=$(shell glide novendor)
 
 ALL_LIST = $(TEST_LIST)
 
@@ -22,14 +23,14 @@ SUDOPATH=${PATH}
 all: build test raspi raspi2 edison armadillo
 
 fmt:
-	go fmt ./...
+	@echo $(TARGETS_FMT) | xargs go fmt
 
 doc: fmt
 #	golint ./...
 	go build github.com/shiguredo/fuji/cmd/fuji
 	godoc github.com/shiguredo/fuji
 
-build: deps
+build: fmt deps
 #	golint ./...
 	go build
 	go build $(LDFLAGS) github.com/shiguredo/fuji/cmd/fuji
