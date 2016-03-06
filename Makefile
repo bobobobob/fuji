@@ -14,7 +14,7 @@ REV=`git rev-parse HEAD | cut -c1-7`
 ARTIFACTS=downloads
 BUILDDIR=build
 LDFLAGS=-ldflags "-X main.version=${TAG}-${REV}"
-TARGETS_FMT=$(shell glide novendor)
+TARGETS_NOVENDOR=$(shell glide novendor)
 
 ALL_LIST = $(TEST_LIST)
 
@@ -23,7 +23,7 @@ SUDOPATH=${PATH}
 all: build test raspi raspi2 edison armadillo
 
 fmt:
-	@echo $(TARGETS_FMT) | xargs go fmt
+	@echo $(TARGETS_NOVENDOR) | xargs go fmt
 
 doc: fmt
 #	golint ./...
@@ -140,7 +140,7 @@ linux_amd64_deb: linux_amd64
 
 test: $(ALL_LIST)
 	go get golang.org/x/tools/cmd/cover
-	go test -coverpkg github.com/shiguredo/fuji ./...
+	go test -coverpkg github.com/shiguredo/fuji $(TARGETS_NOVENDOR)
 
 deps:
 	if [ -d $(ARTIFACTS) ] ; then rm -rf $(ARTIFACTS) ; fi
