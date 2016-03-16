@@ -64,8 +64,8 @@ func (s Subscribed) Delete(topic string) error {
 	delete(s.list, topic)
 	return nil
 }
-func (b *Broker) AddSubscribed(deviceName string, qos byte) error {
-	t := strings.Join([]string{b.TopicPrefix, b.GatewayName, deviceName, "subscribe"}, "/")
+func (b *Broker) AddSubscribed(deviceName string, deviceType string, qos byte) error {
+	t := strings.Join([]string{b.TopicPrefix, b.GatewayName, deviceName, deviceType, "subscribe"}, "/")
 	log.Infof("subscribe: %#v", t)
 	return b.Subscribed.Add(t, qos)
 }

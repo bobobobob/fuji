@@ -269,7 +269,7 @@ func (device SerialDevice) AddSubscribe() error {
 		return nil
 	}
 	for _, b := range device.Broker {
-		b.AddSubscribed(device.Name, device.QoS)
+		b.AddSubscribed(device.Name, device.Type, device.QoS)
 	}
 	return nil
 }
