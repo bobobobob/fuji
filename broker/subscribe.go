@@ -20,6 +20,8 @@ import (
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
+
+	"github.com/shiguredo/fuji/message"
 )
 
 type Subscribed struct {
@@ -64,12 +66,12 @@ func (s Subscribed) Delete(topic string) error {
 	delete(s.list, topic)
 	return nil
 }
-func (b *Broker) AddSubscribed(deviceName string, deviceType string, qos byte) error {
-	t := strings.Join([]string{b.TopicPrefix, b.GatewayName, deviceName, deviceType, "subscribe"}, "/")
+func (b *Broker) AddSubscribed(deviceTopic message.TopicString, qos byte) error {
+	t := strings.Join([]string{b.TopicPrefix, b.GatewayName, deviceTopic.String()}, "/")
 	log.Infof("subscribe: %#v", t)
 	return b.Subscribed.Add(t, qos)
 }
-func (b *Broker) DeleteSubscribed(deviceName string, qos byte) error {
-	t := strings.Join([]string{b.TopicPrefix, b.GatewayName, deviceName}, "/")
+func (b *Broker) DeleteSubscribed(deviceTopic message.TopicString, qos byte) error {
+	t := strings.Join([]string{b.TopicPrefix, b.GatewayName, deviceTopic.String()}, "/")
 	return b.Subscribed.Delete(t)
 }

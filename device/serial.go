@@ -31,19 +31,20 @@ import (
 )
 
 type SerialDevice struct {
-	Name       string `validate:"max=256,regexp=[^/]+,validtopic"`
-	Broker     []*broker.Broker
-	BrokerName string
-	QoS        byte `validate:"min=0,max=2"`
-	InputPort  InputPortType
-	Serial     string `validate:"max=256"`
-	Baud       int    `validate:"min=0"`
-	Size       int    `validate:"min=0,max=256"`
-	Type       string `validate:"max=256"`
-	Interval   int    `validate:"min=0"`
-	Retain     bool
-	Subscribe  bool
-	DeviceChan DeviceChannel // GW -> device
+	Name           string `validate:"max=256,regexp=[^/]+,validtopic"`
+	Broker         []*broker.Broker
+	BrokerName     string
+	QoS            byte `validate:"min=0,max=2"`
+	InputPort      InputPortType
+	Serial         string `validate:"max=256"`
+	Baud           int    `validate:"min=0"`
+	Size           int    `validate:"min=0,max=256"`
+	Type           string `validate:"max=256"`
+	Interval       int    `validate:"min=0"`
+	Retain         bool
+	Subscribe      bool
+	SubscribeTopic message.TopicString
+	DeviceChan     DeviceChannel // GW -> device
 }
 
 func (device SerialDevice) String() string {
@@ -113,6 +114,9 @@ func NewSerialDevice(section config.ConfigSection, brokers []*broker.Broker, dev
 	sub, ok := values["subscribe"]
 	if ok && sub == "true" {
 		ret.Subscribe = true
+		ret.SubscribeTopic = message.TopicString{
+			Str: strings.Join([]string{ret.Name, ret.Type, "subscribe"}, "/"),
+		}
 	}
 
 	if err := ret.Validate(); err != nil {
@@ -238,7 +242,7 @@ func (device SerialDevice) Start(channel chan message.Message) error {
 				channel <- msg
 			case msg, _ := <-device.DeviceChan.Chan:
 				log.Infof("msg topic:, %v / %v", msg.Topic, device.Name)
-				if !strings.HasSuffix(msg.Topic, strings.Join([]string{device.Name, device.Type, "subscribe"}, "/")) {
+				if !strings.HasSuffix(msg.Topic, device.SubscribeTopic.String()) {
 					continue
 				}
 				log.Infof("msg reached to device, %v", msg)
@@ -269,7 +273,7 @@ func (device SerialDevice) AddSubscribe() error {
 		return nil
 	}
 	for _, b := range device.Broker {
-		b.AddSubscribed(device.Name, device.Type, device.QoS)
+		b.AddSubscribed(device.SubscribeTopic, device.QoS)
 	}
 	return nil
 }
