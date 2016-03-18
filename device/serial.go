@@ -242,6 +242,9 @@ func (device SerialDevice) Start(channel chan message.Message) error {
 				channel <- msg
 			case msg, _ := <-device.DeviceChan.Chan:
 				log.Infof("msg topic:, %v / %v", msg.Topic, device.Name)
+				if !device.Subscribe {
+					continue
+				}
 				if !strings.HasSuffix(msg.Topic, device.SubscribeTopic.Str) {
 					continue
 				}
