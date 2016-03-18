@@ -72,6 +72,6 @@ func (b *Broker) AddSubscribed(deviceTopic message.TopicString, qos byte) error 
 	return b.Subscribed.Add(t, qos)
 }
 func (b *Broker) DeleteSubscribed(deviceTopic message.TopicString, qos byte) error {
-	t := strings.Join([]string{b.TopicPrefix, b.GatewayName, deviceTopic.String()}, "/")
+	t := strings.Join([]string{b.TopicPrefix, b.GatewayName, deviceTopic.Str}, "/")
 	return b.Subscribed.Delete(t)
 }
