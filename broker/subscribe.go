@@ -67,7 +67,7 @@ func (s Subscribed) Delete(topic string) error {
 	return nil
 }
 func (b *Broker) AddSubscribed(deviceTopic message.TopicString, qos byte) error {
-	t := strings.Join([]string{b.TopicPrefix, b.GatewayName, deviceTopic.String()}, "/")
+	t := strings.Join([]string{b.TopicPrefix, b.GatewayName, deviceTopic.Str}, "/")
 	log.Infof("subscribe: %#v", t)
 	return b.Subscribed.Add(t, qos)
 }

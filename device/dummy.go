@@ -143,7 +143,7 @@ func (device DummyDevice) MainLoop(channel chan message.Message) error {
 			}
 			channel <- msg
 		case msg, _ := <-device.DeviceChan.Chan:
-			if !strings.HasSuffix(msg.Topic, device.SubscribeTopic.String()) {
+			if !strings.HasSuffix(msg.Topic, device.SubscribeTopic.Str) {
 				continue
 			}
 
