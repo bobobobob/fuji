@@ -42,9 +42,8 @@ type SerialDevice struct {
 	Type           string `validate:"max=256"`
 	Interval       int    `validate:"min=0"`
 	Retain         bool
-	Subscribe      bool
-	SubscribeTopic message.TopicString
-	DeviceChan     DeviceChannel // GW -> device
+	SubscribeTopic message.TopicString // initialized as ""
+	DeviceChan     DeviceChannel       // GW -> device
 }
 
 func (device SerialDevice) String() string {
@@ -113,7 +112,6 @@ func NewSerialDevice(section config.ConfigSection, brokers []*broker.Broker, dev
 
 	sub, ok := values["subscribe"]
 	if ok && sub == "true" {
-		ret.Subscribe = true
 		ret.SubscribeTopic = message.TopicString{
 			Str: strings.Join([]string{ret.Name, ret.Type, "subscribe"}, "/"),
 		}
@@ -242,9 +240,6 @@ func (device SerialDevice) Start(channel chan message.Message) error {
 				channel <- msg
 			case msg, _ := <-device.DeviceChan.Chan:
 				log.Infof("msg topic:, %v / %v", msg.Topic, device.Name)
-				if !device.Subscribe {
-					continue
-				}
 				if !strings.HasSuffix(msg.Topic, device.SubscribeTopic.Str) {
 					continue
 				}
@@ -272,7 +267,7 @@ func (device SerialDevice) DeviceType() string {
 }
 
 func (device SerialDevice) AddSubscribe() error {
-	if !device.Subscribe {
+	if device.SubscribeTopic.Str == "" {
 		return nil
 	}
 	for _, b := range device.Broker {

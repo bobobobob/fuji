@@ -40,9 +40,8 @@ type DummyDevice struct {
 	Payload        []byte `validate:"max=4096"`
 	Type           string `validate:"max=256"`
 	Retain         bool
-	Subscribe      bool
-	SubscribeTopic message.TopicString
-	DeviceChan     DeviceChannel // GW -> device
+	SubscribeTopic message.TopicString // initialized as ""
+	DeviceChan     DeviceChannel       // GW -> device
 }
 
 // String retruns dummy device information
@@ -96,7 +95,6 @@ func NewDummyDevice(section config.ConfigSection, brokers []*broker.Broker, devC
 
 	sub, ok := values["subscribe"]
 	if ok && sub == "true" {
-		ret.Subscribe = true
 		ret.SubscribeTopic = message.TopicString{
 			Str: strings.Join([]string{ret.Name, ret.Type, "subscribe"}, "/"),
 		}
@@ -143,9 +141,6 @@ func (device DummyDevice) MainLoop(channel chan message.Message) error {
 			}
 			channel <- msg
 		case msg, _ := <-device.DeviceChan.Chan:
-			if !device.Subscribe {
-				continue
-			}
 			if !strings.HasSuffix(msg.Topic, device.SubscribeTopic.Str) {
 				continue
 			}
@@ -167,7 +162,7 @@ func (device DummyDevice) Stop() error {
 }
 
 func (device DummyDevice) AddSubscribe() error {
-	if !device.Subscribe {
+	if device.SubscribeTopic.Str == "" {
 		return nil
 	}
 	for _, b := range device.Broker {
