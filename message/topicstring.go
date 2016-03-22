@@ -34,7 +34,7 @@ type TopicString struct {
 	Str string `validate:"max=32767,validtopic"`
 }
 
-func (topic TopicString) Sring() string {
+func (topic TopicString) String() string {
 	return fmt.Sprintf("Topic: %s", topic.Str)
 }
 
