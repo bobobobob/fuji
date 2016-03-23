@@ -2,7 +2,7 @@
 MQTT Gateway: Fuji
 ###########################
 
-:version: 1.0.1
+:version: 1.0.2
 
 .. image:: https://circleci.com/gh/shiguredo/fuji/tree/develop.svg?style=svg&circle-token=203d959fffaf8dcdc0c68642dde5329e55a47792
     :target: https://circleci.com/gh/shiguredo/fuji/tree/develop
@@ -39,16 +39,16 @@ Coming Soon
 Downloads
 =========
 
-:URL: https://github.com/shiguredo/fuji/releases/tag/1.0.1
+:URL: https://github.com/shiguredo/fuji/releases/tag/1.0.2
 
-- `fuji-gw_1.0.1_arm5.tar.gz <https://github.com/shiguredo/fuji/releases/download/1.0.1/fuji-gw_1.0.1_arm5.tar.gz>`_
-- `fuji-gw_1.0.1_arm6.tar.gz <https://github.com/shiguredo/fuji/releases/download/1.0.1/fuji-gw_1.0.1_arm6.tar.gz>`_
-- `fuji-gw_1.0.1_arm7.tar.gz <https://github.com/shiguredo/fuji/releases/download/1.0.1/fuji-gw_1.0.1_arm7.tar.gz>`_
-- `fuji-gw_1.0.1_edison_386.ipk <https://github.com/shiguredo/fuji/releases/download/1.0.1/fuji-gw_1.0.1_edison_386.ipk>`_
-- `fuji-gw_1.0.1_linux_386.tar.gz <https://github.com/shiguredo/fuji/releases/download/1.0.1/fuji-gw_1.0.1_linux_386.tar.gz>`_
-- `fuji-gw_1.0.1_linux_amd64.tar.gz <https://github.com/shiguredo/fuji/releases/download/1.0.1/fuji-gw_1.0.1_linux_amd64.tar.gz>`_
-- `fuji-gw_1.0.1_raspi2_arm7.deb <https://github.com/shiguredo/fuji/releases/download/1.0.1/fuji-gw_1.0.1_raspi2_arm7.deb>`_
-- `fuji-gw_1.0.1_raspi_arm6.deb <https://github.com/shiguredo/fuji/releases/download/1.0.1/fuji-gw_1.0.1_raspi_arm6.deb>`_
+- `fuji-gw_1.0.2_arm5.tar.gz <https://github.com/shiguredo/fuji/releases/download/1.0.2/fuji-gw_1.0.2_arm5.tar.gz>`_
+- `fuji-gw_1.0.2_arm6.tar.gz <https://github.com/shiguredo/fuji/releases/download/1.0.2/fuji-gw_1.0.2_arm6.tar.gz>`_
+- `fuji-gw_1.0.2_arm7.tar.gz <https://github.com/shiguredo/fuji/releases/download/1.0.2/fuji-gw_1.0.2_arm7.tar.gz>`_
+- `fuji-gw_1.0.2_edison_386.ipk <https://github.com/shiguredo/fuji/releases/download/1.0.2/fuji-gw_1.0.2_edison_386.ipk>`_
+- `fuji-gw_1.0.2_linux_386.tar.gz <https://github.com/shiguredo/fuji/releases/download/1.0.2/fuji-gw_1.0.2_linux_386.tar.gz>`_
+- `fuji-gw_1.0.2_linux_amd64.tar.gz <https://github.com/shiguredo/fuji/releases/download/1.0.2/fuji-gw_1.0.2_linux_amd64.tar.gz>`_
+- `fuji-gw_1.0.2_raspi2_arm7.deb <https://github.com/shiguredo/fuji/releases/download/1.0.2/fuji-gw_1.0.2_raspi2_arm7.deb>`_
+- `fuji-gw_1.0.2_raspi_arm6.deb <https://github.com/shiguredo/fuji/releases/download/1.0.2/fuji-gw_1.0.2_raspi_arm6.deb>`_
 
 ChangeLog
 =========
@@ -58,7 +58,7 @@ see `CHANGELOG.rst <https://github.com/shiguredo/fuji/blob/develop/CHANGELOG.rst
 Migration Notice
 ================
 
-from version 0.3.0 or under to 1.0.1
+from version 0.3.0 or under to 1.0.2
 --------------------------------------
 
 Configuration file format changed to TOML

@@ -2,7 +2,7 @@
 MQTT gateway 'Fuji' Install Instruction
 #######################################
 
-:version: 1.0.1
+:version: 1.0.2
 
 Install
 ============
@@ -19,13 +19,13 @@ x86_64 Linux
 
 ::
 
-    $ tar xvfz fuji-gw_1.0.1_linux_amd64.tar.gz
+    $ tar xvfz fuji-gw_1.0.2_linux_amd64.tar.gz
 
 
 For Raspberry Pi (Raspbian)
 --------------------------------------
 
-:Package: fuji-gw_1.0.1_raspi_arm6.deb
+:Package: fuji-gw_1.0.2_raspi_arm6.deb
 
 #. Download a package
 #. Install by `dpkg -i`
@@ -37,13 +37,13 @@ Note: The fuji-gw process runs as a root.
 
 ::
 
-    $ dpkg -i fuji-gw_1.0.1_raspi_arm6.deb
+    $ dpkg -i fuji-gw_1.0.2_raspi_arm6.deb
     $ dpkg -i fuji-gw_<Version>_raspi_arm6.deb
 
 For Raspberry Pi 2(Raspbian)
 -----------------------------
 
-:Package: fuji-gw_1.0.1_raspi2_arm7.deb
+:Package: fuji-gw_1.0.2_raspi2_arm7.deb
 
 #. Download a package
 #. Install by `dpkg -i`
@@ -51,13 +51,13 @@ For Raspberry Pi 2(Raspbian)
 
 ::
 
-    $ dpkg -i fuji-gw_1.0.1_raspi2_arm7.deb
+    $ dpkg -i fuji-gw_1.0.2_raspi2_arm7.deb
     $ fuji-gw -c /etc/fuji-gw/config.toml
 
 For Armadillo-IoT
 --------------------
 
-:tar.gz File: fuji-gw_1.0.1_arm5.tar.gz
+:tar.gz File: fuji-gw_1.0.2_arm5.tar.gz
 
 (Note:) If you want to embed Fuji to startup image, please refer `Armadillo-IoT Gateway Standard manual <http://manual.atmark-techno.com/armadillo-iot/armadillo-iotg-std_product_manual_ja-1.1.1/>`_ of Atmark-Techno.
 
@@ -85,7 +85,7 @@ For Armadillo-IoT
 For Intel Edison
 -------------------
 
-:Package: fuji-gw_1.0.1_edison_386.ipk
+:Package: fuji-gw_1.0.2_edison_386.ipk
 
 #. Login to Intel Edison
 #. Download package          
