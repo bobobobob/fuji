@@ -9,11 +9,12 @@ FPM = fpm
 REPO="github.com/shiguredo/fuji/cmd/fuji"
 TEST_LIST := tests
 
-TAG=1.0.1
+TAG=1.0.2
 REV=`git rev-parse HEAD | cut -c1-7`
 ARTIFACTS=downloads
 BUILDDIR=build
 LDFLAGS=-ldflags "-X main.version=${TAG}-${REV}"
+TARGETS_NOVENDOR=$(shell glide novendor)
 
 ALL_LIST = $(TEST_LIST)
 
@@ -22,7 +23,7 @@ SUDOPATH=${PATH}
 all: build test raspi raspi2 edison armadillo
 
 fmt:
-	go fmt ./...
+	@echo $(TARGETS_NOVENDOR) | xargs go fmt
 
 doc: fmt
 #	golint ./...
@@ -139,7 +140,7 @@ linux_amd64_deb: linux_amd64
 
 test: $(ALL_LIST)
 	go get golang.org/x/tools/cmd/cover
-	go test -coverpkg github.com/shiguredo/fuji ./...
+	go test -coverpkg github.com/shiguredo/fuji $(TARGETS_NOVENDOR)
 
 deps:
 	if [ -d $(ARTIFACTS) ] ; then rm -rf $(ARTIFACTS) ; fi
@@ -151,7 +152,7 @@ deps:
 	go get -u github.com/mitchellh/gox
 	go get github.com/kr/pty
 #	go get -u github.com/golang/lint/golint
-	godep restore
+	glide install
 
 clean:
 	rm -f fuji

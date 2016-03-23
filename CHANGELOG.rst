@@ -11,6 +11,19 @@ CHANGE
 FIX
 	bug fix
 
+1.0.2
+=====
+
+:release: 2016-03-23
+
+UPDATE
+
+- build: switched from godep to glide.
+
+FIX
+
+- device: serial subscribe topic mismatch
+
 1.0.1
 =====
 

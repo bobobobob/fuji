@@ -31,17 +31,17 @@ import (
 
 // DummyDevice is an dummy device which outputs only specified payload.
 type DummyDevice struct {
-	Name       string `validate:"max=256,regexp=[^/]+,validtopic"`
-	Broker     []*broker.Broker
-	BrokerName string
-	QoS        byte `validate:"min=0,max=2"`
-	InputPort  InputPortType
-	Interval   int    `validate:"min=1"`
-	Payload    []byte `validate:"max=4096"`
-	Type       string `validate:"max=256"`
-	Retain     bool
-	Subscribe  bool
-	DeviceChan DeviceChannel // GW -> device
+	Name           string `validate:"max=256,regexp=[^/]+,validtopic"`
+	Broker         []*broker.Broker
+	BrokerName     string
+	QoS            byte `validate:"min=0,max=2"`
+	InputPort      InputPortType
+	Interval       int    `validate:"min=1"`
+	Payload        []byte `validate:"max=4096"`
+	Type           string `validate:"max=256"`
+	Retain         bool
+	SubscribeTopic message.TopicString // initialized as ""
+	DeviceChan     DeviceChannel       // GW -> device
 }
 
 // String retruns dummy device information
@@ -95,7 +95,9 @@ func NewDummyDevice(section config.ConfigSection, brokers []*broker.Broker, devC
 
 	sub, ok := values["subscribe"]
 	if ok && sub == "true" {
-		ret.Subscribe = true
+		ret.SubscribeTopic = message.TopicString{
+			Str: strings.Join([]string{ret.Name, ret.Type, "subscribe"}, "/"),
+		}
 	}
 
 	// Validation
@@ -139,7 +141,7 @@ func (device DummyDevice) MainLoop(channel chan message.Message) error {
 			}
 			channel <- msg
 		case msg, _ := <-device.DeviceChan.Chan:
-			if !strings.HasSuffix(msg.Topic, device.Name) {
+			if device.SubscribeTopic.Str == "" || !strings.HasSuffix(msg.Topic, device.SubscribeTopic.Str) {
 				continue
 			}
 
@@ -160,11 +162,11 @@ func (device DummyDevice) Stop() error {
 }
 
 func (device DummyDevice) AddSubscribe() error {
-	if !device.Subscribe {
+	if device.SubscribeTopic.Str == "" {
 		return nil
 	}
 	for _, b := range device.Broker {
-		b.AddSubscribed(device.Name, device.QoS)
+		b.AddSubscribed(device.SubscribeTopic, device.QoS)
 	}
 	return nil
 }

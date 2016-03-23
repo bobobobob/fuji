@@ -3,5 +3,4 @@ downloads
 opkg-utils
 packages/opkg_files/control
 packages/opkg_files/control.tar.gz
-Godeps/_workspace/
-Godeps/Readme
+vendor

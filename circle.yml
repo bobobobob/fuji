@@ -24,19 +24,19 @@ dependencies:
     - rm -rf ${GOPATH}/src/${REPO_PATH}
     - mkdir -p ${GOPATH}/src/${ORG_PATH}
     - cp -r ../fuji ${GOPATH}/src/${ORG_PATH}
-    - go get github.com/tools/godep
-    - cd ${GOPATH}/src/${REPO_PATH} && godep restore
+    - go get github.com/Masterminds/glide
+    - cd ${GOPATH}/src/${REPO_PATH} && glide install
 
 test:
   override:
     - go version
     - go get -u github.com/mitchellh/gox
     - docker run -d -p 1883:1883 -p 8883:8883 -p 9883:9883 -p 8080:8080 -v /home/ubuntu/.go_workspace/src/github.com/shiguredo/fuji/tests/mosquitto:/mosquitto --name fuji-test-mosquitto shiguredo/mosquitto ; sleep 20
-    - godep go build:
+    - go build:
         pwd: ../.go_workspace/src/${REPO_PATH}
     - make build:
         pwd: ../.go_workspace/src/${REPO_PATH}
-    - godep go test -coverpkg github.com/shiguredo/fuji ./...:
+    - go test -coverpkg github.com/shiguredo/fuji $(glide novendor):
         pwd: ../.go_workspace/src/${REPO_PATH}
   post:
     - make arm5 arm6 arm7 linux_386 linux_amd64 raspi raspi2 armadillo edison:
