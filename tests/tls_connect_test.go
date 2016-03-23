@@ -32,7 +32,7 @@ import (
 var configStr = `
 [gateway]
 
-    name = "hamlocalconnect"
+    name = "tlshamlocalconnect"
 
 [[broker."mosquitto/1"]]
 
