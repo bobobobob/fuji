@@ -159,6 +159,34 @@ func addStatusSections(configSections []ConfigSection, statusSectionMap SectionM
 	return configSections
 }
 
+func addHttpSections(configSections []ConfigSection, httpSectionMap SectionMap) []ConfigSection {
+	valueMap := make(ValueMap)
+	for name, value := range httpSectionMap {
+
+		switch value.(type) {
+		case int64:
+			valueMap[name] = strconv.FormatInt(value.(int64), 10)
+		case bool:
+			valueMap[name] = strconv.FormatBool(value.(bool))
+		case []map[string]interface{}:
+			// do nothing
+		default:
+			valueMap[name] = value.(string)
+		}
+
+	}
+	if len(valueMap) > 0 {
+		rt := ConfigSection{
+			Title:  "http",
+			Type:   "http",
+			Values: valueMap,
+		}
+		configSections = append(configSections, rt)
+	}
+
+	return configSections
+}
+
 func addConfigSections(configSections []ConfigSection, title string, sectionMap SectionMap) ([]ConfigSection, error) {
 	for name, values := range sectionMap {
 		t := strings.Split(name, "/")
@@ -250,6 +278,9 @@ func LoadConfigByte(conf []byte) (Config, error) {
 
 	// status section
 	sections = addStatusSections(sections, configToml.Status)
+
+	// http section
+	sections = addHttpSections(sections, configToml.Http)
 
 	// broker sections
 	sections, err = addConfigSections(sections, "broker", configToml.Brokers)

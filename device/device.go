@@ -36,33 +36,47 @@ func NewDevices(conf config.Config, brokers []*broker.Broker) ([]Devicer, []Devi
 
 	var err error
 	for _, section := range conf.Sections {
-		if section.Type != "device" {
+		switch section.Type {
+		case "device":
+			var device Devicer
+
+			devChan := NewDeviceChannel()
+			devChannels = append(devChannels, devChan)
+
+			switch section.Values["type"] {
+			case "dummy":
+				device, err = NewDummyDevice(section, brokers, devChan)
+				if err != nil {
+					log.Errorf("could not create dummy device, %v", err)
+					continue
+				}
+			case "serial":
+				device, err = NewSerialDevice(section, brokers, devChan)
+				if err != nil {
+					log.Errorf("could not create serial device, %v", err)
+					continue
+				}
+			default:
+				log.Warnf("unknown device type, %v", section.Arg)
+				continue
+			}
+			ret = append(ret, device)
 			continue
-		}
+		case "http":
+			var httpdevice Devicer
 
-		var device Devicer
+			devChan := NewDeviceChannel()
+			devChannels = append(devChannels, devChan)
 
-		devChan := NewDeviceChannel()
-		devChannels = append(devChannels, devChan)
-
-		switch section.Values["type"] {
-		case "dummy":
-			device, err = NewDummyDevice(section, brokers, devChan)
+			httpdevice, err = NewHttpDevice(section, brokers, devChan)
 			if err != nil {
-				log.Errorf("could not create dummy device, %v", err)
-				continue
+				log.Errorf("could not create http device, %v", err)
 			}
-		case "serial":
-			device, err = NewSerialDevice(section, brokers, devChan)
-			if err != nil {
-				log.Errorf("could not create serial device, %v", err)
-				continue
-			}
+			ret = append(ret, httpdevice)
+			continue
 		default:
-			log.Warnf("unknown device type, %v", section.Arg)
 			continue
 		}
-		ret = append(ret, device)
 	}
 
 	return ret, devChannels, nil

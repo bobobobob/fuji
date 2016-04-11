@@ -174,12 +174,12 @@ func httpCall(req Request, respPipe chan []byte) {
 			Status: status,
 			Body:   string(respbodybuf),
 		}
-// TODO: implement GET
+		// TODO: implement GET
 	default:
 		// do nothing
 		log.Error(errors.New("illegal method"))
 		resp = Response{
-			Id:    req.Id,
+			Id:     req.Id,
 			Status: 502,
 			Body:   "",
 		}
@@ -225,7 +225,7 @@ func (device HttpDevice) Start(channel chan message.Message) error {
 				var req Request
 				var jsonbuf []byte
 				err := json.Unmarshal(msg.Body, &req)
-				
+
 				// JSON error : 502
 				if err != nil {
 					log.Error(err)
