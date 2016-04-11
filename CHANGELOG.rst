@@ -11,6 +11,15 @@ CHANGE
 FIX
 	bug fix
 
+develop
+==========
+
+:release: not yet
+
+UPDATE
+
+- build: update gopsutil.
+
 1.0.2
 =====
 
