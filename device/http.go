@@ -33,6 +33,7 @@ import (
 
 type HttpDevice struct {
 	Name           string `validate:"max=256,regexp=[^/]+,validtopic"`
+	Type           string `validate:"max=256,regexp=[^/]+,validtopic"`
 	Broker         []*broker.Broker
 	BrokerName     string
 	QoS            byte `validate:"min=0,max=2"`
@@ -81,7 +82,8 @@ func (device HttpDevice) String() string {
 // If config validation failed, return error
 func NewHttpDevice(section config.ConfigSection, brokers []*broker.Broker, devChan DeviceChannel) (HttpDevice, error) {
 	ret := HttpDevice{
-		Name:       "httpdevicename",
+		Name:       "http",
+		Type:       "http",
 		DeviceChan: devChan,
 	}
 	values := section.Values
@@ -208,7 +210,7 @@ func (device HttpDevice) Start(channel chan message.Message) error {
 				log.Debugf("msgBuf to send: %v", msgBuf)
 				msg := message.Message{
 					Sender:     device.Name,
-					Type:       "http",
+					Type:       device.Type,
 					QoS:        device.QoS,
 					Retained:   device.Retain,
 					BrokerName: device.BrokerName,
