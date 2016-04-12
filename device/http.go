@@ -43,33 +43,6 @@ type HttpDevice struct {
 	DeviceChan     DeviceChannel       // GW -> device
 }
 
-type HttpBody struct {
-	Payload []byte
-}
-
-func (body HttpBody) Read(p []byte) (n int, err error) {
-	n = len(body.Payload)
-	for i := 0; i < n; i++ {
-		p[i] = body.Payload[i]
-	}
-	return n, nil
-}
-
-type HttpRequest struct {
-	Url      string `json:"url"`
-	Id       string `json:"id"`
-	Method   string `json:"method"`
-	Response bool   `json:"response"`
-	Body     string `json:"body"`
-}
-
-type HttpResponse struct {
-	Url    string `json:"url"`
-	Id     string `json:"id"`
-	Status int    `json:"status"`
-	Body   string `json:"body"`
-}
-
 func (device HttpDevice) String() string {
 	var brokers []string
 	for _, broker := range device.Broker {
@@ -156,21 +129,30 @@ func httpCall(req Request, respPipe chan []byte) {
 
 	switch req.Method {
 	case "POST":
-		reqbody := HttpBody{Payload: []byte(req.Body)}
-		httpresp, err := http.Post(req.Url, "vpplication/json;charset=utf-8", &reqbody)
+		log.Debugf("body: %v\n", req.Body)
+		reqbody := strings.NewReader(req.Body)
+		httpresp, err := http.Post(req.Url, "vpplication/json;charset=utf-8", reqbody)
 		defer httpresp.Body.Close()
 		if err != nil {
 			log.Error(err)
 		}
+		log.Debugf("httpresp: %v\n", httpresp)
+		log.Debugf("Statuscode: %v\n", httpresp.StatusCode)
 		respbodybuf, err := ioutil.ReadAll(httpresp.Body)
+
 		var status float64
 		status = 200
+		// check error
 		if err != nil {
 			status = 502
+			respbodybuf = []byte("")
 		}
+		// check response status
 		if httpresp.StatusCode != 200 {
 			status = 502
+			respbodybuf = []byte("")
 		}
+		// make response data
 		resp = Response{
 			Id:     req.Id,
 			Status: status,
@@ -187,11 +169,13 @@ func httpCall(req Request, respPipe chan []byte) {
 		}
 	}
 	// return response via chan
-	jsonbuf, err := json.Marshal([]byte(resp.Body))
+	log.Debugf("resp: %v\n", resp)
+	jsonbuf, err := json.Marshal(resp)
 	if err != nil {
 		log.Error(errors.New("Not a JSON response"))
 		jsonbuf = []byte(`{"id": "` + req.Id + `", "status": 502, "body":"{}"}`)
 	}
+	log.Debugf("jsonbuf in string: %s\n", string(jsonbuf))
 	respPipe <- jsonbuf
 }
 
@@ -224,18 +208,33 @@ func (device HttpDevice) Start(channel chan message.Message) error {
 				}
 				log.Infof("msg reached to device, %v", msg)
 
-				var req Request
+				// compatible type to nested JSON
+				var reqJson map[string]interface{}
 				var jsonbuf []byte
-				err := json.Unmarshal(msg.Body, &req)
 
+				err := json.Unmarshal(msg.Body, &reqJson)
 				// JSON error : 502
 				if err != nil {
 					log.Error(err)
-					jsonbuf = []byte(`{"id": "` + req.Id + `", "status": 502, "body":"{}"}`)
+					jsonbuf = []byte(`{"id": "", "status": 502, "body":"{}"}`)
 					readPipe <- jsonbuf
 					continue
 				}
+				bodyJson, err := json.Marshal(reqJson["body"].(map[string]interface{}))
+				if err != nil {
+					log.Error(err)
+					jsonbuf = []byte(`{"id": "", "status": 502, "body":"{}"}`)
+					readPipe <- jsonbuf
+					continue
+				}
+
 				// issue HTTP request
+				req := Request{
+					Id:     reqJson["id"].(string),
+					Url:    reqJson["url"].(string),
+					Method: reqJson["method"].(string),
+					Body:   string(bodyJson),
+				}
 				go httpCall(req, readPipe)
 				log.Infof("http request issued")
 			}
