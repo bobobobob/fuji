@@ -30,10 +30,74 @@ import (
 	"github.com/shiguredo/fuji/gateway"
 )
 
-var requestJson_pre = `{"id":"aasfa","url":"http://`
-var requestJson_post = `","method":"POST","body":{"a":"b"}}`
-var expectedJsonBody = `{"a":"b"}`
-var expectedJson = `{"id":"aasfa","status":200,"body":{"a":"b"}}`
+
+// Fuji for TestHttpConnectLocalPub
+func fujiHttpConnectLocalPub(t *testing.T, httpConfigStr string) {
+	assert := assert.New(t)
+
+	conf, err := config.LoadConfigByte([]byte(httpConfigStr))
+	assert.Nil(err)
+	commandChannel := make(chan string)
+	go fuji.StartByFileWithChannel(conf, commandChannel)
+	t.Logf("fuji started")
+	time.Sleep(10 * time.Second)
+	t.Logf("fuji wait completed")
+	commandChannel <- "close"
+	// wait to stop fuji
+	time.Sleep(1 * time.Second)
+}
+
+// Echoback body JSON HTTP server
+func httpEchoServer(t *testing.T, cmdChan chan string, expectedJsonBody string) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, expectedJsonBody)
+		t.Logf("request arrived: %v\n", r)
+	})
+
+	// get usable port number
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Logf("listen error: %v\n", err)
+	}
+	addr := listener.Addr().String()
+	t.Logf("Address: %s\n", addr)
+
+	// start http server
+	go func(l net.Listener) {
+		s := &http.Server{
+			Addr:           l.Addr().String(),
+			Handler:        mux, 
+			ReadTimeout:    10 * time.Second,
+			WriteTimeout:   10 * time.Second,
+			MaxHeaderBytes: 1 << 20,
+		}
+		err := s.Serve(l)
+		if err != nil {
+			t.Logf("server start error: %v\n", err)
+		}
+	}(listener)
+
+	cmdChan <- addr
+
+	// wait operation complete
+	<-cmdChan
+}
+
+// TestHttpConnectLocalPubSub
+// 1. connect gateway to local broker
+// 2. subscribe to HTTP request
+// 3. check subscribe
+// 4. issue HTTP request
+// 5. get HTTP response
+// 6. publish response
+func TestHttpConnectPostLocalPubSub(t *testing.T) {
+	expected := []string{
+		`{"id":"aasfa","url":"http://`,
+		`","method":"POST","body":{"a":"b"}}`,
+		`{"a":"b"}`,
+		`{"id":"aasfa","status":200,"body":{"a":"b"}}`,
+	}
 
 var httpConfigStr = `
 [gateway]
@@ -52,73 +116,49 @@ var httpConfigStr = `
     qos = 0
     enabled = true
 `
-
-// Fuji for TestHttpConnectLocalPub
-func fujiHttpConnectLocalPub(t *testing.T) {
-	assert := assert.New(t)
-
-	conf, err := config.LoadConfigByte([]byte(httpConfigStr))
-	assert.Nil(err)
-	commandChannel := make(chan string)
-	go fuji.StartByFileWithChannel(conf, commandChannel)
-	t.Logf("fuji started")
-	time.Sleep(10 * time.Second)
-	t.Logf("fuji wait completed")
-	commandChannel <- "close"
-	// wait to stop fuji
-	time.Sleep(1 * time.Second)
+	generalTestProcess(t, httpConfigStr, expected)
 }
 
-// Echoback body JSON HTTP server
-func httpEchoServer(t *testing.T, cmdChan chan string) {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, expectedJsonBody)
-		t.Logf("request arrived: %v\n", r)
-	})
-
-	// get usable port number
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Logf("listen error: %v\n", err)
+func TestHttpConnectGetLocalPubSub(t *testing.T) {
+	expected := []string{
+		`{"id":"aasfa","url":"http://`,
+		`/?a=b","method":"GET","body":{}}`,
+		`{"a":"b"}`,
+		`{"id":"aasfa","status":200,"body":{}}`,
 	}
-	addr := listener.Addr().String()
-	t.Logf("Address: %s\n", addr)
 
-	// start http server
-	go func(l net.Listener) {
-		s := &http.Server{
-			Addr:           l.Addr().String(),
-			Handler:        nil, // use default ServerMux
-			ReadTimeout:    10 * time.Second,
-			WriteTimeout:   10 * time.Second,
-			MaxHeaderBytes: 1 << 20,
-		}
-		err := s.Serve(l)
-		if err != nil {
-			t.Logf("server start error: %v\n", err)
-		}
-	}(listener)
+var httpConfigStr = `
+[gateway]
 
-	cmdChan <- addr
+    name = "httpgetconnect"
 
-	// wait operation complete
-	<-cmdChan
+[[broker."mosquitto/1"]]
+
+    host = "localhost"
+    port = 1883
+
+    retry_interval = 10
+
+[http]
+    broker = "mosquitto"
+    qos = 0
+    enabled = true
+`
+	generalTestProcess(t, httpConfigStr, expected)
 }
 
-// TestHttpConnectLocalPubSub
-// 1. connect gateway to local broker with TLS
-// 2. send data from dummy
-// 3. check subscribe
-func TestHttpConnectLocalPubSub(t *testing.T) {
+func generalTestProcess(t *testing.T, httpConfigStr string, expectedStr []string) {
 	assert := assert.New(t)
+
+	requestJson_pre, requestJson_post, expectedJsonBody, expectedJson := expectedStr[0], expectedStr[1], expectedStr[2], expectedStr[3]
 
 	// start fuji
-	go fujiHttpConnectLocalPub(t)
+	go fujiHttpConnectLocalPub(t, httpConfigStr)
 	time.Sleep(1 * time.Second)
 
 	// start http server
 	httpCmdChan := make(chan string)
-	go httpEchoServer(t, httpCmdChan)
+	go httpEchoServer(t, httpCmdChan, expectedJsonBody)
 	// wait for bootup
 	listener := <-httpCmdChan
 	t.Logf("http started at: %s", listener)
@@ -178,4 +218,5 @@ func TestHttpConnectLocalPubSub(t *testing.T) {
 
 	client.Disconnect(20)
 	httpCmdChan <- "done"
+	time.Sleep(1 * time.Second)
 }
