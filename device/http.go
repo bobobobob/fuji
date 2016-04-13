@@ -161,6 +161,27 @@ func httpCall(req Request, respPipe chan []byte) {
 			Body:   json.RawMessage(respbodystr),
 		}
 		// TODO: implement GET
+	case "GET":
+		log.Infof("post body: %v\n", req.Body)
+		httpgetresp, err := http.Get(req.Url)
+		defer httpgetresp.Body.Close()
+		if err != nil {
+			log.Error(err)
+			break
+		}
+		log.Infof("httpgetresp: $v\n", httpgetresp)
+		log.Infof("Statuscode: $v\n", httpgetresp.StatusCode)
+
+		var statusget float64
+		statusget = 200
+		if httpgetresp.StatusCode != 200 {
+			statusget = 502
+		}
+		resp = Response{
+			Id:     req.Id,
+			Status: statusget,
+			Body:   json.RawMessage(`{}`),
+		}
 	default:
 		// do nothing
 		log.Error(errors.New("illegal method"))
