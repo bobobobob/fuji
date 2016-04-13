@@ -32,6 +32,7 @@ import (
 
 var requestJson_pre = `{"id":"aasfa","url":"http://`
 var requestJson_post = `","method":"POST","body":{"a":"b"}}`
+var expectedJsonBody = `{"a":"b"}`
 var expectedJson = `{"id":"aasfa","status":200,"body":{"a":"b"}}`
 
 var httpConfigStr = `
@@ -71,7 +72,7 @@ func fujiHttpConnectLocalPub(t *testing.T) {
 // Echoback body JSON HTTP server
 func httpEchoServer(t *testing.T, cmdChan chan string) {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, expectedJson)
+		fmt.Fprintf(w, expectedJsonBody)
 		t.Logf("request arrived: %v\n", r)
 	})
 

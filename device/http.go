@@ -119,9 +119,9 @@ type Request struct {
 }
 
 type Response struct {
-	Id     string  `json:"id"`
-	Status float64 `json:"status"`
-	Body   string  `json:"body"`
+	Id     string          `json:"id"`
+	Status float64         `json:"status"`
+	Body   json.RawMessage `json:"body"`
 }
 
 func httpCall(req Request, respPipe chan []byte) {
@@ -153,10 +153,12 @@ func httpCall(req Request, respPipe chan []byte) {
 			respbodybuf = []byte("")
 		}
 		// make response data
+		respbodystr := string(respbodybuf)
+		log.Infof("response body: %s", respbodystr)
 		resp = Response{
 			Id:     req.Id,
 			Status: status,
-			Body:   string(respbodybuf),
+			Body:   json.RawMessage(respbodystr),
 		}
 		// TODO: implement GET
 	default:
@@ -165,12 +167,12 @@ func httpCall(req Request, respPipe chan []byte) {
 		resp = Response{
 			Id:     req.Id,
 			Status: 502,
-			Body:   "",
+			Body:   json.RawMessage(""),
 		}
 	}
 	// return response via chan
 	log.Infof("resp: %v\n", resp)
-	jsonbuf, err := json.Marshal(resp)
+	jsonbuf, err := json.Marshal(&resp)
 	if err != nil {
 		log.Error(errors.New("Not a JSON response"))
 		jsonbuf = []byte(`{"id": "` + req.Id + `", "status": 502, "body":"{}"}`)
