@@ -129,15 +129,15 @@ func httpCall(req Request, respPipe chan []byte) {
 
 	switch req.Method {
 	case "POST":
-		log.Debugf("body: %v\n", req.Body)
+		log.Infof("post body: %v\n", req.Body)
 		reqbody := strings.NewReader(req.Body)
 		httpresp, err := http.Post(req.Url, "vpplication/json;charset=utf-8", reqbody)
 		defer httpresp.Body.Close()
 		if err != nil {
 			log.Error(err)
 		}
-		log.Debugf("httpresp: %v\n", httpresp)
-		log.Debugf("Statuscode: %v\n", httpresp.StatusCode)
+		log.Infof("httpresp: %v\n", httpresp)
+		log.Infof("Statuscode: %v\n", httpresp.StatusCode)
 		respbodybuf, err := ioutil.ReadAll(httpresp.Body)
 
 		var status float64
@@ -169,7 +169,7 @@ func httpCall(req Request, respPipe chan []byte) {
 		}
 	}
 	// return response via chan
-	log.Debugf("resp: %v\n", resp)
+	log.Infof("resp: %v\n", resp)
 	jsonbuf, err := json.Marshal(resp)
 	if err != nil {
 		log.Error(errors.New("Not a JSON response"))
@@ -244,12 +244,12 @@ func (device HttpDevice) Start(channel chan message.Message) error {
 }
 
 func (device HttpDevice) Stop() error {
-	log.Infof("closing serial: %v", device.Name)
+	log.Infof("closing http: %v", device.Name)
 	return nil
 }
 
 func (device HttpDevice) DeviceType() string {
-	return "serial"
+	return "http"
 }
 
 func (device HttpDevice) AddSubscribe() error {

@@ -1,0 +1,180 @@
+// Copyright 2015-2016 Shiguredo Inc. <fuji@shiguredo.jp>
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package main
+
+import (
+	"fmt"
+	"net"
+	"net/http"
+	"testing"
+	"time"
+
+	MQTT "github.com/eclipse/paho.mqtt.golang"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/shiguredo/fuji"
+	"github.com/shiguredo/fuji/broker"
+	"github.com/shiguredo/fuji/config"
+	"github.com/shiguredo/fuji/gateway"
+)
+
+var requestJson_pre = `{"id":"aasfa","url":"http://`
+var requestJson_post = `","method":"POST","body":{"a":"b"}}`
+var expectedJson = `{"id":"aasfa","status":200,"body":{"a":"b"}}`
+
+var httpConfigStr = `
+[gateway]
+
+    name = "httppostconnect"
+
+[[broker."mosquitto/1"]]
+
+    host = "localhost"
+    port = 1883
+
+    retry_interval = 10
+
+[http]
+    broker = "mosquitto"
+    qos = 0
+    enabled = true
+`
+
+// Fuji for TestHttpConnectLocalPub
+func fujiHttpConnectLocalPub(t *testing.T) {
+	assert := assert.New(t)
+
+	conf, err := config.LoadConfigByte([]byte(httpConfigStr))
+	assert.Nil(err)
+	commandChannel := make(chan string)
+	go fuji.StartByFileWithChannel(conf, commandChannel)
+	t.Logf("fuji started")
+	time.Sleep(10 * time.Second)
+	t.Logf("fuji wait completed")
+	commandChannel <- "close"
+	// wait to stop fuji
+	time.Sleep(1 * time.Second)
+}
+
+// Echoback body JSON HTTP server
+func httpEchoServer(t *testing.T, cmdChan chan string) {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, expectedJson)
+		t.Logf("request arrived: %v\n", r)
+	})
+
+	// get usable port number
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Logf("listen error: %v\n", err)
+	}
+	addr := listener.Addr().String()
+	t.Logf("Address: %s\n", addr)
+
+	// start http server
+	go func(l net.Listener) {
+		s := &http.Server{
+			Addr:           l.Addr().String(),
+			Handler:        nil, // use default ServerMux
+			ReadTimeout:    10 * time.Second,
+			WriteTimeout:   10 * time.Second,
+			MaxHeaderBytes: 1 << 20,
+		}
+		err := s.Serve(l)
+		if err != nil {
+			t.Logf("server start error: %v\n", err)
+		}
+	}(listener)
+
+	cmdChan <- addr
+
+	// wait operation complete
+	<-cmdChan
+}
+
+// TestHttpConnectLocalPubSub
+// 1. connect gateway to local broker with TLS
+// 2. send data from dummy
+// 3. check subscribe
+func TestHttpConnectLocalPubSub(t *testing.T) {
+	assert := assert.New(t)
+
+	// start fuji
+	go fujiHttpConnectLocalPub(t)
+	time.Sleep(1 * time.Second)
+
+	// start http server
+	httpCmdChan := make(chan string)
+	go httpEchoServer(t, httpCmdChan)
+	// wait for bootup
+	listener := <-httpCmdChan
+	t.Logf("http started at: %s", listener)
+
+	// pub/sub test to broker on localhost
+	// publised JSON messages confirmed by subscriber
+
+	// get config
+	conf, err := config.LoadConfigByte([]byte(httpConfigStr))
+	assert.Nil(err)
+
+	// get Gateway
+	gw, err := gateway.NewGateway(conf)
+	assert.Nil(err)
+
+	// get Broker
+	brokerList, err := broker.NewBrokers(conf, gw.BrokerChan)
+	assert.Nil(err)
+
+	// Setup MQTT pub/sub client to confirm published content.
+	//
+	subscriberChannel := make(chan [2]string)
+
+	opts := MQTT.NewClientOptions()
+	url := fmt.Sprintf("tcp://%s:%d", brokerList[0].Host, brokerList[0].Port)
+	opts.AddBroker(url)
+	opts.SetClientID(fmt.Sprintf("prefix%s", gw.Name))
+	opts.SetCleanSession(false)
+
+	client := MQTT.NewClient(opts)
+	assert.Nil(err)
+	if token := client.Connect(); token.Wait() && token.Error() != nil {
+		assert.Nil(token.Error())
+		t.Log(token.Error())
+	}
+
+	qos := 0
+	requestTopic := fmt.Sprintf("/%s/http/request", gw.Name)
+	expectedTopic := fmt.Sprintf("/%s/http/response", gw.Name)
+	t.Logf("expetcted topic: %s\nexpected message%s", expectedTopic, expectedJson)
+	client.Subscribe(expectedTopic, byte(qos), func(client *MQTT.Client, msg MQTT.Message) {
+		subscriberChannel <- [2]string{msg.Topic(), string(msg.Payload())}
+	})
+	// publish JSON
+	token := client.Publish(requestTopic, 0, false, requestJson_pre+listener+requestJson_post)
+	token.Wait()
+
+	// wait for 1 publication of dummy worker
+	t.Logf("wait for 1 publication of dummy worker")
+	select {
+	case message := <-subscriberChannel:
+		assert.Equal(expectedTopic, message[0])
+		assert.Equal(expectedJson, message[1])
+	case <-time.After(time.Second * 11):
+		assert.Equal("subscribe completed in 11 sec", "not completed")
+	}
+
+	client.Disconnect(20)
+	httpCmdChan <- "done"
+}
