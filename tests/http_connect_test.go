@@ -30,7 +30,6 @@ import (
 	"github.com/shiguredo/fuji/gateway"
 )
 
-
 // Fuji for TestHttpConnectLocalPub
 func fujiHttpConnectLocalPub(t *testing.T, httpConfigStr string) {
 	assert := assert.New(t)
@@ -67,7 +66,7 @@ func httpEchoServer(t *testing.T, cmdChan chan string, expectedJsonBody string) 
 	go func(l net.Listener) {
 		s := &http.Server{
 			Addr:           l.Addr().String(),
-			Handler:        mux, 
+			Handler:        mux,
 			ReadTimeout:    10 * time.Second,
 			WriteTimeout:   10 * time.Second,
 			MaxHeaderBytes: 1 << 20,
@@ -99,7 +98,7 @@ func TestHttpConnectPostLocalPubSub(t *testing.T) {
 		`{"id":"aasfa","status":200,"body":{"a":"b"}}`,
 	}
 
-var httpConfigStr = `
+	var httpConfigStr = `
 [gateway]
 
     name = "httppostconnect"
@@ -127,7 +126,7 @@ func TestHttpConnectGetLocalPubSub(t *testing.T) {
 		`{"id":"aasfa","status":200,"body":{}}`,
 	}
 
-var httpConfigStr = `
+	var httpConfigStr = `
 [gateway]
 
     name = "httpgetconnect"

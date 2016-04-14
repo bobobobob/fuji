@@ -21,6 +21,7 @@ import (
 	"github.com/shiguredo/fuji/config"
 	"github.com/shiguredo/fuji/device"
 	"github.com/shiguredo/fuji/gateway"
+	"github.com/shiguredo/fuji/http"
 )
 
 // Start make command channel and start gateway.
@@ -75,6 +76,16 @@ func StartByFileWithChannel(conf config.Config, commandChannel chan string) erro
 		}
 	}
 
+	// optional and start immediately
+	http, httpChannels, err := http.NewHttp(conf, brokerList)
+	if err != nil {
+		log.Warnf("http create error, %v", err)
+		// run whenever http created
+	} else {
+		http.AddSubscribe()
+		gw.HttpChannels = httpChannels
+	}
+
 	// Start brokers and devices
 	for _, b := range gw.Brokers {
 		err := b.MQTTClientSetup(gw.Name)
@@ -88,6 +99,14 @@ func StartByFileWithChannel(conf config.Config, commandChannel chan string) erro
 		if err != nil {
 			log.Errorf("device start error, %v", err)
 			continue
+		}
+	}
+	// start http
+	if len(httpChannels) > 0 {
+		log.Info("http start")
+		err := http.Start(gw.MsgChan)
+		if err != nil {
+			log.Errorf("http start error, %v", err)
 		}
 	}
 

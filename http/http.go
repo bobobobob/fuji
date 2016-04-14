@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package device
+package http
 
 import (
 	"encoding/json"
@@ -31,7 +31,7 @@ import (
 	"github.com/shiguredo/fuji/message"
 )
 
-type HttpDevice struct {
+type Http struct {
 	Name           string `validate:"max=256,regexp=[^/]+,validtopic"`
 	Type           string `validate:"max=256,regexp=[^/]+,validtopic"`
 	Broker         []*broker.Broker
@@ -40,10 +40,10 @@ type HttpDevice struct {
 	Retain         bool
 	SubscribeTopic message.TopicString // fixed value
 	PublishTopic   message.TopicString // fixed value
-	DeviceChan     DeviceChannel       // GW -> device
+	HttpChan       HttpChannel         // GW -> http
 }
 
-func (device HttpDevice) String() string {
+func (device Http) String() string {
 	var brokers []string
 	for _, broker := range device.Broker {
 		brokers = append(brokers, fmt.Sprintf("%s\n", broker))
@@ -51,58 +51,72 @@ func (device HttpDevice) String() string {
 	return fmt.Sprintf("%#v", device)
 }
 
-// NewHttpDevice read config.ConfigSection and returnes HttpDevice.
+// NewHttp read config.ConfigSection and returnes Http.
 // If config validation failed, return error
-func NewHttpDevice(section config.ConfigSection, brokers []*broker.Broker, devChan DeviceChannel) (HttpDevice, error) {
-	ret := HttpDevice{
-		Name:       "http",
-		Type:       "http",
-		DeviceChan: devChan,
-	}
-	values := section.Values
-	bname, ok := section.Values["broker"]
-	if !ok {
-		return ret, fmt.Errorf("broker does not set")
+func NewHttp(conf config.Config, brokers []*broker.Broker) (Http, []HttpChannel, error) {
+
+	httpChan := NewHttpChannel()
+	ret := Http{
+		Name:     "http",
+		Type:     "http",
+		HttpChan: httpChan,
 	}
 
-	for _, b := range brokers {
-		if b.Name == bname {
-			ret.Broker = brokers
+	// search http section
+	for _, section := range conf.Sections {
+		if section.Type != "http" {
+			continue
 		}
-	}
-	if ret.Broker == nil {
-		return ret, fmt.Errorf("broker does not exists: %s", bname)
-	}
-	ret.BrokerName = bname
 
-	qos, err := strconv.Atoi(values["qos"])
-	if err != nil {
-		return ret, err
-	} else {
-		ret.QoS = byte(qos)
-	}
-	ret.Retain = false
-	if values["retain"] == "true" {
-		ret.Retain = true
-	}
+		values := section.Values
+		httpChannels := NewHttpChannels()
+		httpChannels = append(httpChannels, httpChan)
 
-	// subscribe default topic
-	ret.SubscribeTopic = message.TopicString{
-		Str: strings.Join([]string{"http", "request"}, "/"),
-	}
-	// publish default topic
-	ret.PublishTopic = message.TopicString{
-		Str: strings.Join([]string{"http", "response"}, "/"),
-	}
+		bname, ok := section.Values["broker"]
+		if !ok {
+			return ret, httpChannels, fmt.Errorf("broker does not set")
+		}
 
-	if err := ret.Validate(); err != nil {
-		return ret, err
-	}
+		for _, b := range brokers {
+			if b.Name == bname {
+				ret.Broker = brokers
+			}
+		}
+		if ret.Broker == nil {
+			return ret, httpChannels, fmt.Errorf("broker does not exists: %s", bname)
+		}
+		ret.BrokerName = bname
 
-	return ret, nil
+		qos, err := strconv.Atoi(values["qos"])
+		if err != nil {
+			return ret, httpChannels, err
+		} else {
+			ret.QoS = byte(qos)
+		}
+		ret.Retain = false
+		if values["retain"] == "true" {
+			ret.Retain = true
+		}
+
+		// subscribe default topic
+		ret.SubscribeTopic = message.TopicString{
+			Str: strings.Join([]string{"http", "request"}, "/"),
+		}
+		// publish default topic
+		ret.PublishTopic = message.TopicString{
+			Str: strings.Join([]string{"http", "response"}, "/"),
+		}
+
+		if err := ret.Validate(); err != nil {
+			return ret, httpChannels, err
+		}
+
+		return ret, httpChannels, nil
+	}
+	return ret, NewHttpChannels(), fmt.Errorf("no http found")
 }
 
-func (device *HttpDevice) Validate() error {
+func (device *Http) Validate() error {
 	validator := validator.NewValidator()
 	validator.SetValidationFunc("validtopic", config.ValidMqttPublishTopic)
 	if err := validator.Validate(device); err != nil {
@@ -202,7 +216,7 @@ func httpCall(req Request, respPipe chan []byte) {
 	respPipe <- jsonbuf
 }
 
-func (device HttpDevice) Start(channel chan message.Message) error {
+func (device Http) Start(channel chan message.Message) error {
 
 	readPipe := make(chan []byte)
 
@@ -224,7 +238,7 @@ func (device HttpDevice) Start(channel chan message.Message) error {
 					Body:       msgBuf,
 				}
 				channel <- msg
-			case msg, _ := <-device.DeviceChan.Chan:
+			case msg, _ := <-device.HttpChan.Chan:
 				log.Infof("msg topic:, %v / %v", msg.Topic, device.Name)
 				if device.SubscribeTopic.Str == "" || !strings.HasSuffix(msg.Topic, device.SubscribeTopic.Str) {
 					continue
@@ -266,16 +280,16 @@ func (device HttpDevice) Start(channel chan message.Message) error {
 	return nil
 }
 
-func (device HttpDevice) Stop() error {
+func (device Http) Stop() error {
 	log.Infof("closing http: %v", device.Name)
 	return nil
 }
 
-func (device HttpDevice) DeviceType() string {
+func (device Http) DeviceType() string {
 	return "http"
 }
 
-func (device HttpDevice) AddSubscribe() error {
+func (device Http) AddSubscribe() error {
 	if device.SubscribeTopic.Str == "" {
 		return nil
 	}

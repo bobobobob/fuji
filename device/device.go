@@ -62,18 +62,6 @@ func NewDevices(conf config.Config, brokers []*broker.Broker) ([]Devicer, []Devi
 			}
 			ret = append(ret, device)
 			continue
-		case "http":
-			var httpdevice Devicer
-
-			devChan := NewDeviceChannel()
-			devChannels = append(devChannels, devChan)
-
-			httpdevice, err = NewHttpDevice(section, brokers, devChan)
-			if err != nil {
-				log.Errorf("could not create http device, %v", err)
-			}
-			ret = append(ret, httpdevice)
-			continue
 		default:
 			continue
 		}

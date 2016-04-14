@@ -29,6 +29,7 @@ import (
 	"github.com/shiguredo/fuji/broker"
 	"github.com/shiguredo/fuji/config"
 	"github.com/shiguredo/fuji/device"
+	"github.com/shiguredo/fuji/http"
 	"github.com/shiguredo/fuji/message"
 )
 
@@ -42,6 +43,7 @@ type Gateway struct {
 	BrokerChan     chan message.Message   // GW -> Broker
 	CmdChan        chan string            // somewhere -> GW
 	DeviceChannels []device.DeviceChannel // GW -> device
+	HttpChannels   []http.HttpChannel     // GW -> http
 
 	MaxRetryCount int `validate:"min=1"`
 	RetryInterval int `validate:"min=1"`
@@ -79,6 +81,7 @@ func NewGateway(conf config.Config) (*Gateway, error) {
 		MsgChan:        make(chan message.Message, MaxMsgChanBufferSize),
 		BrokerChan:     make(chan message.Message, MaxBrokerChanBufferSize),
 		DeviceChannels: device.NewDeviceChannels(),
+		HttpChannels:   http.NewHttpChannels(),
 		CmdChan:        make(chan string),
 		MaxRetryCount:  DefaultMaxRetryCount,
 		RetryInterval:  DefaultRetryInterval,
@@ -168,6 +171,10 @@ MAINLOOP:
 			// send to all device
 			for _, dc := range gw.DeviceChannels {
 				dc.Chan <- msg
+			}
+			// send to http
+			for _, hc := range gw.HttpChannels {
+				hc.Chan <- msg
 			}
 		case signal, _ := <-sigChan:
 			// sigChan: signals

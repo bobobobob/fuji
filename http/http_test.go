@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package device
+package http
 
 import (
 	"fmt"
@@ -24,7 +24,7 @@ import (
 	"github.com/shiguredo/fuji/config"
 )
 
-func TestNewHttpDevice(t *testing.T) {
+func TestNewHttp(t *testing.T) {
 	assert := assert.New(t)
 
 	configStr := `
@@ -39,13 +39,14 @@ func TestNewHttpDevice(t *testing.T) {
 	brokers := []*broker.Broker{b1}
 	fmt.Printf("conf:%v\n", conf)
 	fmt.Printf("conf.Sections:%v\n", conf.Sections)
-	b, err := NewHttpDevice(conf.Sections[0], brokers, NewDeviceChannel())
+	b, httpchannels, err := NewHttp(conf, brokers)
 	assert.Nil(err)
+	assert.NotNil(httpchannels)
 	assert.NotNil(b.Broker)
 	assert.Equal(byte(1), b.QoS)
 }
 
-func TestNewHttpDeviceInvalidQoS(t *testing.T) {
+func TestNewHttpInvalidQoS(t *testing.T) {
 	assert := assert.New(t)
 
 	configStr := `
@@ -58,11 +59,11 @@ func TestNewHttpDeviceInvalidQoS(t *testing.T) {
 	assert.Nil(err)
 	b1 := &broker.Broker{Name: "sango"}
 	brokers := []*broker.Broker{b1}
-	_, err = NewHttpDevice(conf.Sections[0], brokers, NewDeviceChannel())
+	_, _, err = NewHttp(conf, brokers)
 	assert.NotNil(err)
 }
 
-func TestNewHttpDeviceInvalidBroker(t *testing.T) {
+func TestNewHttpInvalidBroker(t *testing.T) {
 	assert := assert.New(t)
 
 	configStr := `
@@ -75,6 +76,6 @@ func TestNewHttpDeviceInvalidBroker(t *testing.T) {
 	assert.Nil(err)
 	b1 := &broker.Broker{Name: "sango"}
 	brokers := []*broker.Broker{b1}
-	_, err = NewHttpDevice(conf.Sections[0], brokers, NewDeviceChannel())
+	_, _, err = NewHttp(conf, brokers)
 	assert.NotNil(err)
 }
