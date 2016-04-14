@@ -43,6 +43,8 @@ type Http struct {
 	HttpChan       HttpChannel         // GW -> http
 }
 
+const InvalidResponseCode = 502
+
 func (device Http) String() string {
 	var brokers []string
 	for _, broker := range device.Broker {
@@ -146,14 +148,15 @@ func httpCall(req Request, respPipe chan []byte) {
 		var status float64
 		status = 200
 
+		log.Infof("post URL: %v\n", req.Url)
 		log.Infof("post body: %v\n", req.Body)
 		reqbody := strings.NewReader(req.Body)
 		httpresp, err := http.Post(req.Url, "application/json;charset=utf-8", reqbody)
 		if err != nil {
-			log.Error(err)
+			log.Errorf("POST response error: %v\n", err)
 			resp = Response{
 				Id:     req.Id,
-				Status: status,
+				Status: InvalidResponseCode,
 				Body:   json.RawMessage(`{}`),
 			}
 			break
@@ -165,12 +168,12 @@ func httpCall(req Request, respPipe chan []byte) {
 
 		// check error
 		if err != nil {
-			status = 502
+			status = InvalidResponseCode
 			respbodybuf = []byte("")
 		}
 		// check response status
 		if httpresp.StatusCode != 200 {
-			status = 502
+			status = InvalidResponseCode
 			respbodybuf = []byte("")
 		}
 		// make response data
@@ -188,10 +191,10 @@ func httpCall(req Request, respPipe chan []byte) {
 		log.Infof("post body: %v\n", req.Body)
 		httpgetresp, err := http.Get(req.Url)
 		if err != nil {
-			log.Error(err)
+			log.Errorf("GET response error: %v\n", err)
 			resp = Response{
 				Id:     req.Id,
-				Status: statusget,
+				Status: InvalidResponseCode,
 				Body:   json.RawMessage(`{}`),
 			}
 			break
@@ -200,7 +203,7 @@ func httpCall(req Request, respPipe chan []byte) {
 		log.Infof("Statuscode: $v\n", httpgetresp.StatusCode)
 
 		if httpgetresp.StatusCode != 200 {
-			statusget = 502
+			statusget = InvalidResponseCode
 		}
 		resp = Response{
 			Id:     req.Id,
@@ -213,7 +216,7 @@ func httpCall(req Request, respPipe chan []byte) {
 		log.Error(errors.New("illegal method"))
 		resp = Response{
 			Id:     req.Id,
-			Status: 502,
+			Status: InvalidResponseCode,
 			Body:   json.RawMessage(""),
 		}
 	}
@@ -222,7 +225,7 @@ func httpCall(req Request, respPipe chan []byte) {
 	jsonbuf, err := json.Marshal(&resp)
 	if err != nil {
 		log.Error(errors.New("Not a JSON response"))
-		jsonbuf = []byte(`{"id": "` + req.Id + `", "status": 502, "body":"{}"}`)
+		jsonbuf = []byte(`{"id": "` + req.Id + `", "status": ` + strconv.Itoa(InvalidResponseCode) + `, "body":"{}"}`)
 	}
 	log.Debugf("jsonbuf in string: %s\n", string(jsonbuf))
 	respPipe <- jsonbuf
@@ -262,17 +265,17 @@ func (device Http) Start(channel chan message.Message) error {
 				var jsonbuf []byte
 
 				err := json.Unmarshal(msg.Body, &reqJson)
-				// JSON error : 502
+				// JSON error : 502 (InvalidResponseCode)
 				if err != nil {
 					log.Error(err)
-					jsonbuf = []byte(`{"id": "", "status": 502, "body":"{}"}`)
+					jsonbuf = []byte(`{"id": "", "status": ` + strconv.Itoa(InvalidResponseCode) + `, "body":"{}"}`)
 					readPipe <- jsonbuf
 					continue
 				}
 				bodyJson, err := json.Marshal(reqJson["body"].(map[string]interface{}))
 				if err != nil {
 					log.Error(err)
-					jsonbuf = []byte(`{"id": "", "status": 502, "body":"{}"}`)
+					jsonbuf = []byte(`{"id": "", "status": ` + strconv.Itoa(InvalidResponseCode) + `, "body":"{}"}`)
 					readPipe <- jsonbuf
 					continue
 				}

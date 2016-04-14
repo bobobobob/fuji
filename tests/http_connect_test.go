@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 	"time"
 
@@ -28,6 +29,7 @@ import (
 	"github.com/shiguredo/fuji/broker"
 	"github.com/shiguredo/fuji/config"
 	"github.com/shiguredo/fuji/gateway"
+	MYHTTP "github.com/shiguredo/fuji/http"
 )
 
 // Fuji for TestHttpConnectLocalPub
@@ -110,6 +112,34 @@ func TestHttpConnectGetLocalPubSub(t *testing.T) {
 [gateway]
 
     name = "httpgetconnect"
+
+[[broker."mosquitto/1"]]
+
+    host = "localhost"
+    port = 1883
+
+    retry_interval = 10
+
+[http]
+    broker = "mosquitto"
+    qos = 0
+    enabled = true
+`
+	generalTestProcess(t, httpConfigStr, expected)
+}
+
+func TestHttpConnectBadURLGetLocalPubSub(t *testing.T) {
+	expected := []string{
+		`{"id":"aasfa","url":"badprefix`,
+		`/?a=b","method":"GET","body":{}}`,
+		`{"a":"b"}`,
+		`{"id":"aasfa","status":` + strconv.Itoa(MYHTTP.InvalidResponseCode) + `,"body":{}}`,
+	}
+
+	var httpConfigStr = `
+[gateway]
+
+    name = "httpgetbadurlconnect"
 
 [[broker."mosquitto/1"]]
 
