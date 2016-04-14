@@ -16,8 +16,8 @@ package main
 
 import (
 	"fmt"
-	"net"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -48,36 +48,16 @@ func fujiHttpConnectLocalPub(t *testing.T, httpConfigStr string) {
 
 // Echoback body JSON HTTP server
 func httpEchoServer(t *testing.T, cmdChan chan string, expectedJsonBody string) {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, expectedJsonBody)
 		t.Logf("request arrived: %v\n", r)
-	})
+	}))
+	defer ts.Close()
 
 	// get usable port number
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Logf("listen error: %v\n", err)
-	}
-	addr := listener.Addr().String()
-	t.Logf("Address: %s\n", addr)
+	t.Logf("Address: %s\n", ts.URL)
 
-	// start http server
-	go func(l net.Listener) {
-		s := &http.Server{
-			Addr:           l.Addr().String(),
-			Handler:        mux,
-			ReadTimeout:    10 * time.Second,
-			WriteTimeout:   10 * time.Second,
-			MaxHeaderBytes: 1 << 20,
-		}
-		err := s.Serve(l)
-		if err != nil {
-			t.Logf("server start error: %v\n", err)
-		}
-	}(listener)
-
-	cmdChan <- addr
+	cmdChan <- ts.URL
 
 	// wait operation complete
 	<-cmdChan
@@ -92,7 +72,7 @@ func httpEchoServer(t *testing.T, cmdChan chan string, expectedJsonBody string) 
 // 6. publish response
 func TestHttpConnectPostLocalPubSub(t *testing.T) {
 	expected := []string{
-		`{"id":"aasfa","url":"http://`,
+		`{"id":"aasfa","url":"`,
 		`","method":"POST","body":{"a":"b"}}`,
 		`{"a":"b"}`,
 		`{"id":"aasfa","status":200,"body":{"a":"b"}}`,
@@ -120,7 +100,7 @@ func TestHttpConnectPostLocalPubSub(t *testing.T) {
 
 func TestHttpConnectGetLocalPubSub(t *testing.T) {
 	expected := []string{
-		`{"id":"aasfa","url":"http://`,
+		`{"id":"aasfa","url":"`,
 		`/?a=b","method":"GET","body":{}}`,
 		`{"a":"b"}`,
 		`{"id":"aasfa","status":200,"body":{}}`,

@@ -143,19 +143,26 @@ func httpCall(req Request, respPipe chan []byte) {
 
 	switch req.Method {
 	case "POST":
+		var status float64
+		status = 200
+
 		log.Infof("post body: %v\n", req.Body)
 		reqbody := strings.NewReader(req.Body)
-		httpresp, err := http.Post(req.Url, "vpplication/json;charset=utf-8", reqbody)
-		defer httpresp.Body.Close()
+		httpresp, err := http.Post(req.Url, "application/json;charset=utf-8", reqbody)
 		if err != nil {
 			log.Error(err)
+			resp = Response{
+				Id:     req.Id,
+				Status: status,
+				Body:   json.RawMessage(`{}`),
+			}
+			break
 		}
+
 		log.Infof("httpresp: %v\n", httpresp)
 		log.Infof("Statuscode: %v\n", httpresp.StatusCode)
 		respbodybuf, err := ioutil.ReadAll(httpresp.Body)
 
-		var status float64
-		status = 200
 		// check error
 		if err != nil {
 			status = 502
@@ -174,20 +181,24 @@ func httpCall(req Request, respPipe chan []byte) {
 			Status: status,
 			Body:   json.RawMessage(respbodystr),
 		}
-		// TODO: implement GET
+		defer httpresp.Body.Close()
 	case "GET":
+		var statusget float64
+		statusget = 200
 		log.Infof("post body: %v\n", req.Body)
 		httpgetresp, err := http.Get(req.Url)
-		defer httpgetresp.Body.Close()
 		if err != nil {
 			log.Error(err)
+			resp = Response{
+				Id:     req.Id,
+				Status: statusget,
+				Body:   json.RawMessage(`{}`),
+			}
 			break
 		}
 		log.Infof("httpgetresp: $v\n", httpgetresp)
 		log.Infof("Statuscode: $v\n", httpgetresp.StatusCode)
 
-		var statusget float64
-		statusget = 200
 		if httpgetresp.StatusCode != 200 {
 			statusget = 502
 		}
@@ -196,6 +207,7 @@ func httpCall(req Request, respPipe chan []byte) {
 			Status: statusget,
 			Body:   json.RawMessage(`{}`),
 		}
+		defer httpgetresp.Body.Close()
 	default:
 		// do nothing
 		log.Error(errors.New("illegal method"))
