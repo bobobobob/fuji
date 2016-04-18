@@ -178,7 +178,7 @@ func httpCall(req Request, respPipe chan []byte) {
 		}
 		// make response data
 		respbodystr := string(respbodybuf)
-		log.Infof("response body: %s", respbodystr)
+		log.Infof("POST response body: %s", respbodystr)
 		resp = Response{
 			Id:     req.Id,
 			Status: status,
@@ -199,16 +199,20 @@ func httpCall(req Request, respPipe chan []byte) {
 			}
 			break
 		}
-		log.Infof("httpgetresp: $v\n", httpgetresp)
-		log.Infof("Statuscode: $v\n", httpgetresp.StatusCode)
+		log.Infof("httpgetresp: %v\n", httpgetresp)
+		log.Infof("Statuscode: %v\n", httpgetresp.StatusCode)
+		respbodybuf, err := ioutil.ReadAll(httpgetresp.Body)
 
 		if httpgetresp.StatusCode != 200 {
 			statusget = InvalidResponseCode
+			respbodybuf = []byte("")
 		}
+		respbodystr := string(respbodybuf)
+		log.Infof("GET response body: %s", respbodystr)
 		resp = Response{
 			Id:     req.Id,
 			Status: statusget,
-			Body:   json.RawMessage(`{}`),
+			Body:   json.RawMessage(respbodystr),
 		}
 		defer httpgetresp.Body.Close()
 	default:
