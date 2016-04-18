@@ -89,6 +89,7 @@ func TestHttpConnectPostLocalPubSub(t *testing.T) {
 
     host = "localhost"
     port = 1883
+    topic_prefix = "prefix"
 
     retry_interval = 10
 
@@ -105,7 +106,7 @@ func TestHttpConnectGetLocalPubSub(t *testing.T) {
 		`{"id":"aasfa","url":"`,
 		`/?a=b","method":"GET","body":{}}`,
 		`{"a":"b"}`,
-		`{"id":"aasfa","status":200,"body":{}}`,
+		`{"id":"aasfa","status":200,"body":{"a":"b"}}`,
 	}
 
 	var httpConfigStr = `
@@ -117,6 +118,7 @@ func TestHttpConnectGetLocalPubSub(t *testing.T) {
 
     host = "localhost"
     port = 1883
+    topic_prefix = "prefix"
 
     retry_interval = 10
 
@@ -205,8 +207,8 @@ func generalTestProcess(t *testing.T, httpConfigStr string, expectedStr []string
 	}
 
 	qos := 0
-	requestTopic := fmt.Sprintf("/%s/http/request", gw.Name)
-	expectedTopic := fmt.Sprintf("/%s/http/response", gw.Name)
+	requestTopic := fmt.Sprintf("%s/%s/http/request", brokerList[0].TopicPrefix, gw.Name)
+	expectedTopic := fmt.Sprintf("%s/%s/http/response", brokerList[0].TopicPrefix, gw.Name)
 	t.Logf("expetcted topic: %s\nexpected message%s", expectedTopic, expectedJson)
 	client.Subscribe(expectedTopic, byte(qos), func(client *MQTT.Client, msg MQTT.Message) {
 		subscriberChannel <- [2]string{msg.Topic(), string(msg.Payload())}
