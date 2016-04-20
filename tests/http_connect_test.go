@@ -133,7 +133,7 @@ func TestHttpConnectGetLocalPubSub(t *testing.T) {
 	expected := []string{
 		`{"id":"aasfa","url":"`,
 		`/?a=b","method":"GET","body":{}}`,
-		`{"a":"b"}`,
+		`NOT USED`,
 		`{"id":"aasfa","status":200,"body":{"a":"b"}}`,
 	}
 
@@ -162,7 +162,7 @@ func TestHttpConnectBadURLGetLocalPubSub(t *testing.T) {
 	expected := []string{
 		`{"id":"aasfa","url":"badprefix`,
 		`/?a=b","method":"GET","body":{}}`,
-		``,
+		`NOT USED`,
 		`{"id":"aasfa","status":` + strconv.Itoa(MYHTTP.InvalidResponseCode) + `,"body":{}}`,
 	}
 
@@ -190,7 +190,7 @@ func TestHttpConnectRedirectPostLocalPubSub(t *testing.T) {
 	expected := []string{
 		`{"id":"aasfa","url":"`,
 		`","method":"POST","body":{"a":"b"}}`,
-		``,
+		`{"a":"b"}`, // in fact, not used
 		`{"id":"aasfa","status":304,"body":""}`,
 	}
 
@@ -219,7 +219,7 @@ func TestHttpConnectNotFoundGetLocalPubSub(t *testing.T) {
 	expected := []string{
 		`{"id":"aasfa","url":"`,
 		`/?a=b","method":"GET","body":{}}`,
-		``,
+		`NOT USED`,
 		`{"id":"aasfa","status":404,"body":"404 page not found
 "}`,
 	}
