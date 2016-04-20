@@ -15,6 +15,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -48,11 +49,11 @@ func fujiHttpConnectLocalPub(t *testing.T, httpConfigStr string) {
 	time.Sleep(1 * time.Second)
 }
 
-// Echoback body JSON HTTP server
-func httpEchoServer(t *testing.T, cmdChan chan string, expectedJsonBody string) {
+// HTTP server with JSON response
+func httpTestServerEchoBack(t *testing.T, cmdChan chan string, expectedJsonBody string) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, expectedJsonBody)
-		t.Logf("request arrived: %v\n", r)
+		t.Logf("request arrived: %v", r)
 	}))
 	defer ts.Close()
 
@@ -65,13 +66,40 @@ func httpEchoServer(t *testing.T, cmdChan chan string, expectedJsonBody string) 
 	<-cmdChan
 }
 
-// TestHttpConnectLocalPubSub
+func httpTestServerRedirect(t *testing.T, cmdChan chan string, expectedJsonBody string) {
+	ts := httptest.NewServer(http.RedirectHandler("http://127.0.0.1/redirected", 304))
+	defer ts.Close()
+
+	// get usable port number
+	t.Logf("Address: %s\n", ts.URL)
+
+	cmdChan <- ts.URL
+
+	// wait operation complete
+	<-cmdChan
+}
+
+func httpTestServerNotFound(t *testing.T, cmdChan chan string, expectedJsonBody string) {
+	ts := httptest.NewServer(http.NotFoundHandler())
+	defer ts.Close()
+
+	// get usable port number
+	t.Logf("Address: %s\n", ts.URL)
+
+	cmdChan <- ts.URL
+
+	// wait operation complete
+	<-cmdChan
+}
+
+// TestHttpConnect general flow
 // 1. connect gateway to local broker
 // 2. subscribe to HTTP request
 // 3. check subscribe
 // 4. issue HTTP request
 // 5. get HTTP response
 // 6. publish response
+
 func TestHttpConnectPostLocalPubSub(t *testing.T) {
 	expected := []string{
 		`{"id":"aasfa","url":"`,
@@ -98,7 +126,7 @@ func TestHttpConnectPostLocalPubSub(t *testing.T) {
     qos = 0
     enabled = true
 `
-	generalTestProcess(t, httpConfigStr, expected)
+	generalTestProcess(t, httpConfigStr, expected, httpTestServerEchoBack)
 }
 
 func TestHttpConnectGetLocalPubSub(t *testing.T) {
@@ -127,14 +155,14 @@ func TestHttpConnectGetLocalPubSub(t *testing.T) {
     qos = 0
     enabled = true
 `
-	generalTestProcess(t, httpConfigStr, expected)
+	generalTestProcess(t, httpConfigStr, expected, httpTestServerEchoBack)
 }
 
 func TestHttpConnectBadURLGetLocalPubSub(t *testing.T) {
 	expected := []string{
 		`{"id":"aasfa","url":"badprefix`,
 		`/?a=b","method":"GET","body":{}}`,
-		`{"a":"b"}`,
+		``,
 		`{"id":"aasfa","status":` + strconv.Itoa(MYHTTP.InvalidResponseCode) + `,"body":{}}`,
 	}
 
@@ -155,13 +183,72 @@ func TestHttpConnectBadURLGetLocalPubSub(t *testing.T) {
     qos = 0
     enabled = true
 `
-	generalTestProcess(t, httpConfigStr, expected)
+	generalTestProcess(t, httpConfigStr, expected, httpTestServerEchoBack)
 }
 
-func generalTestProcess(t *testing.T, httpConfigStr string, expectedStr []string) {
+func TestHttpConnectRedirectPostLocalPubSub(t *testing.T) {
+	expected := []string{
+		`{"id":"aasfa","url":"`,
+		`","method":"POST","body":{"a":"b"}}`,
+		``,
+		`{"id":"aasfa","status":304,"body":""}`,
+	}
+
+	var httpConfigStr = `
+[gateway]
+
+    name = "httpgetconnectredirect"
+
+[[broker."mosquitto/1"]]
+
+    host = "localhost"
+    port = 1883
+    topic_prefix = "prefix"
+
+    retry_interval = 10
+
+[http]
+    broker = "mosquitto"
+    qos = 0
+    enabled = true
+`
+	generalTestProcess(t, httpConfigStr, expected, httpTestServerRedirect)
+}
+
+func TestHttpConnectNotFoundGetLocalPubSub(t *testing.T) {
+	expected := []string{
+		`{"id":"aasfa","url":"`,
+		`/?a=b","method":"GET","body":{}}`,
+		``,
+		`{"id":"aasfa","status":404,"body":"404 page not found
+"}`,
+	}
+
+	var httpConfigStr = `
+[gateway]
+
+    name = "httpgetconnectnotfound"
+
+[[broker."mosquitto/1"]]
+
+    host = "localhost"
+    port = 1883
+    topic_prefix = "prefix"
+
+    retry_interval = 10
+
+[http]
+    broker = "mosquitto"
+    qos = 0
+    enabled = true
+`
+	generalTestProcess(t, httpConfigStr, expected, httpTestServerNotFound)
+}
+
+func generalTestProcess(t *testing.T, httpConfigStr string, expected []string, httpTestServer func(*testing.T, chan string, string)) {
 	assert := assert.New(t)
 
-	requestJson_pre, requestJson_post, expectedJsonBody, expectedJson := expectedStr[0], expectedStr[1], expectedStr[2], expectedStr[3]
+	requestJson_pre, requestJson_post, expectedJsonBody, expectedJson := expected[0], expected[1], expected[2], expected[3]
 
 	// start fuji
 	go fujiHttpConnectLocalPub(t, httpConfigStr)
@@ -169,7 +256,7 @@ func generalTestProcess(t *testing.T, httpConfigStr string, expectedStr []string
 
 	// start http server
 	httpCmdChan := make(chan string)
-	go httpEchoServer(t, httpCmdChan, expectedJsonBody)
+	go httpTestServer(t, httpCmdChan, expectedJsonBody)
 	// wait for bootup
 	listener := <-httpCmdChan
 	t.Logf("http started at: %s", listener)
@@ -222,7 +309,21 @@ func generalTestProcess(t *testing.T, httpConfigStr string, expectedStr []string
 	select {
 	case message := <-subscriberChannel:
 		assert.Equal(expectedTopic, message[0])
-		assert.Equal(expectedJson, message[1])
+		var respJsonMap map[string]interface{}
+		var expectedJsonMap map[string]interface{}
+
+		err := json.Unmarshal([]byte(message[1]), &respJsonMap)
+		if err != nil {
+			break
+		}
+		err = json.Unmarshal([]byte(expectedJson), &expectedJsonMap)
+		assert.Nil(err)
+
+		if respJsonMap["status"] == 200 {
+			assert.Equal(expectedJson, message[1])
+		} else {
+			assert.Equal(expectedJsonMap["status"], respJsonMap["status"])
+		}
 	case <-time.After(time.Second * 11):
 		assert.Equal("subscribe completed in 11 sec", "not completed")
 	}

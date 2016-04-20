@@ -164,15 +164,11 @@ func httpCall(req Request, respPipe chan []byte) {
 
 		log.Infof("httpresp: %v\n", httpresp)
 		log.Infof("Statuscode: %v\n", httpresp.StatusCode)
+		status = float64(httpresp.StatusCode)
 		respbodybuf, err := ioutil.ReadAll(httpresp.Body)
 
 		// check error
 		if err != nil {
-			status = InvalidResponseCode
-			respbodybuf = []byte("")
-		}
-		// check response status
-		if httpresp.StatusCode != 200 {
 			status = InvalidResponseCode
 			respbodybuf = []byte("")
 		}
@@ -201,12 +197,14 @@ func httpCall(req Request, respPipe chan []byte) {
 		}
 		log.Infof("httpgetresp: %v\n", httpgetresp)
 		log.Infof("Statuscode: %v\n", httpgetresp.StatusCode)
+		statusget = float64(httpgetresp.StatusCode)
 		respbodybuf, err := ioutil.ReadAll(httpgetresp.Body)
-
-		if httpgetresp.StatusCode != 200 {
+		// check error
+		if err != nil {
 			statusget = InvalidResponseCode
 			respbodybuf = []byte("")
 		}
+
 		respbodystr := string(respbodybuf)
 		log.Infof("GET response body: %s", respbodystr)
 		resp = Response{
@@ -229,7 +227,7 @@ func httpCall(req Request, respPipe chan []byte) {
 	jsonbuf, err := json.Marshal(&resp)
 	if err != nil {
 		log.Error(errors.New("Not a JSON response"))
-		jsonbuf = []byte(`{"id": "` + req.Id + `", "status": ` + strconv.Itoa(InvalidResponseCode) + `, "body":"{}"}`)
+		jsonbuf = []byte(`{"id": "` + req.Id + `", "status": ` + strconv.Itoa(int(resp.Status)) + `, "body":"` + string(resp.Body) + `"}`)
 	}
 	log.Debugf("jsonbuf in string: %s\n", string(jsonbuf))
 	respPipe <- jsonbuf
