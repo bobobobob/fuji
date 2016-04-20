@@ -9,9 +9,8 @@ import:
 - package: github.com/go-ole/go-ole
   version: 2b4785954496f7121eb0934e9dc55e85ad40ad8f
 - package: github.com/shirou/gopsutil
-  version: e77438504d45b9985c99a75730fe65220ceea00e
+  version: e8f7a95747d711f34ddfe9dd9b825a84bd059dec
   subpackages:
-  - cpu
   - cpu
   - mem
 - package: github.com/tarm/serial

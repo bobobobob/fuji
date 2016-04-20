@@ -69,7 +69,7 @@ func (device Status) String() string {
 func (c CPUStatus) Get() []message.Message {
 	ret := []message.Message{}
 
-	cpuTimes, err := cpu.CPUTimes(false)
+	cpuTimes, err := cpu.Times(false)
 	if err == nil {
 		for _, t := range c.CpuTimes {
 			msg := message.Message{
