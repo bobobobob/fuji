@@ -10,7 +10,7 @@ machine:
     PATH: "/home/ubuntu/go/bin:${PATH}:${GOPATH}/bin"
     GO15VENDOREXPERIMENT: 1
     GOROOT: "/home/ubuntu/go"
-    GOVERSION: "1.6"
+    GOVERSION: "1.6.2"
   services:
     - docker
 
