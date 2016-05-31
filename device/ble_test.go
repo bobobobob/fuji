@@ -1,0 +1,114 @@
+// Copyright 2015-2016 Shiguredo Inc. <fuji@shiguredo.jp>
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package device
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/shiguredo/fuji/broker"
+	"github.com/shiguredo/fuji/config"
+)
+
+func TestNewBLEDevice(t *testing.T) {
+	assert := assert.New(t)
+
+	configStr := `
+[device."dora"]
+    type = "ble"
+    broker = "sango"
+    qos = 1
+    device = "deviceUUID"
+    service = "serviceUUID"
+    characteristic = "charUUID"
+`
+	conf, err := config.LoadConfigByte([]byte(configStr))
+	b1 := &broker.Broker{Name: "sango"}
+	brokers := []*broker.Broker{b1}
+	b, err := NewBLEDevice(conf.Sections[0], brokers, NewDeviceChannel())
+	assert.Nil(err)
+	assert.NotNil(b.Broker)
+	assert.Equal("dora", b.Name)
+	assert.Equal(byte(1), b.QoS)
+	assert.Equal("deviceUUID", b.DeviceUUID)
+	assert.Equal("serviceUUID", b.ServiceUUID)
+	assert.Equal("charUUID", b.CharacteristicsUUID)
+}
+
+func TestNewBLEDeviceInvalidInterval(t *testing.T) {
+	assert := assert.New(t)
+
+	configStr := `
+[device."dora"]
+    type = "ble"
+    broker = "sango"
+    interval = -1
+    qos = 1
+`
+	conf, err := config.LoadConfigByte([]byte(configStr))
+	b1 := &broker.Broker{Name: "sango"}
+	brokers := []*broker.Broker{b1}
+	_, err = NewBLEDevice(conf.Sections[0], brokers, NewDeviceChannel())
+	assert.NotNil(err)
+}
+
+func TestNewBLEDeviceInvalidQoS(t *testing.T) {
+	assert := assert.New(t)
+
+	configStr := `
+[device."dora"]
+    type = "ble"
+    broker = "sango"
+    qos = -1
+`
+	conf, err := config.LoadConfigByte([]byte(configStr))
+	b1 := &broker.Broker{Name: "sango"}
+	brokers := []*broker.Broker{b1}
+	_, err = NewBLEDevice(conf.Sections[0], brokers, NewDeviceChannel())
+	assert.NotNil(err)
+}
+
+func TestNewBLEDeviceInvalidBroker(t *testing.T) {
+	assert := assert.New(t)
+
+	configStr := `
+[device."dora"]
+    type = "ble"
+    broker = "doesNotExist"
+    qos = 1
+`
+	conf, err := config.LoadConfigByte([]byte(configStr))
+	b1 := &broker.Broker{Name: "sango"}
+	brokers := []*broker.Broker{b1}
+	_, err = NewBLEDevice(conf.Sections[0], brokers, NewDeviceChannel())
+	assert.NotNil(err)
+}
+
+func TestNewBLEDeviceNoUUID(t *testing.T) {
+	assert := assert.New(t)
+
+	configStr := `
+[device."dora"]
+    type = "ble"
+    broker = "doesNotExist"
+    qos = 1
+`
+	conf, err := config.LoadConfigByte([]byte(configStr))
+	b1 := &broker.Broker{Name: "sango"}
+	brokers := []*broker.Broker{b1}
+	_, err = NewBLEDevice(conf.Sections[0], brokers, NewDeviceChannel())
+	assert.NotNil(err)
+}

@@ -1,5 +1,5 @@
-hash: 14b17985fd072e2bca8667c46e8859bf752d438e759f35721884df81461c3406
-updated: 2016-04-07T15:28:10.322773684+09:00
+hash: 6f1f9e1c0cc2c4efe5ef02b43f10fe37f61d9fa1127c03046f2e8d337e1a333d
+updated: 2016-05-31T12:38:56.12615382+09:00
 imports:
 - name: github.com/BurntSushi/toml
   version: 5c4df71dfe9ac89ef6287afc05e4c1b16ae65a1e
@@ -13,10 +13,19 @@ imports:
   version: 2b4785954496f7121eb0934e9dc55e85ad40ad8f
   subpackages:
   - oleutil
-- name: github.com/shirou/gopsutil
-  version: 4c73e74c42e284bc799e27dac5ae98803d7502a4
+- name: github.com/paypal/gatt
+  version: 4ae819d591cfc94c496c45deb55928469542beec
   subpackages:
-  - cpu
+  - linux
+  - linux/cmd
+  - xpc
+  - linux/evt
+  - linux/gioctl
+  - linux/socket
+  - linux/util
+- name: github.com/shirou/gopsutil
+  version: e8f7a95747d711f34ddfe9dd9b825a84bd059dec
+  subpackages:
   - cpu
   - mem
   - internal/common

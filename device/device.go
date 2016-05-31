@@ -58,6 +58,12 @@ func NewDevices(conf config.Config, brokers []*broker.Broker) ([]Devicer, []Devi
 				log.Errorf("could not create serial device, %v", err)
 				continue
 			}
+		case "ble":
+			device, err = NewBLEDevice(section, brokers, devChan)
+			if err != nil {
+				log.Errorf("could not create BLE device, %v", err)
+				continue
+			}
 		default:
 			log.Warnf("unknown device type, %v", section.Arg)
 			continue

@@ -26,3 +26,4 @@ import:
 - package: gopkg.in/validator.v2
   version: 3e4f037f12a1221a0864cf0dd2e81c452ab22448
 - package: github.com/codegangsta/cli
+- package: github.com/paypal/gatt
