@@ -4,7 +4,7 @@ package device
 
 import "github.com/paypal/gatt"
 
-var gattOptionLinux = []gatt.Option{
+var gattOption = []gatt.Option{
 	gatt.LnxMaxConnections(1),
 	gatt.LnxDeviceID(-1, true),
 }
