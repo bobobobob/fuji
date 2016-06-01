@@ -148,12 +148,12 @@ func httpCall(req Request, respPipe chan []byte) {
 		var status float64
 		status = 200
 
-		log.Debugf("post URL: %v\n", req.Url)
-		log.Debugf("post body: %v\n", req.Body)
+		log.Debugf("post URL: %s\n", req.Url)
+		log.Debugf("post body: %s\n", req.Body)
 		reqbody := strings.NewReader(req.Body)
 		httpresp, err := http.Post(req.Url, "application/json;charset=utf-8", reqbody)
 		if err != nil {
-			log.Errorf("POST response error: %v\n", err)
+			log.Errorf("POST response error: %s\n", err)
 			resp = Response{
 				Id:     req.Id,
 				Status: InvalidResponseCode,
@@ -162,8 +162,8 @@ func httpCall(req Request, respPipe chan []byte) {
 			break
 		}
 
-		log.Debugf("httpresp: %v\n", httpresp)
-		log.Debugf("Statuscode: %v\n", httpresp.StatusCode)
+		log.Debugf("httpresp: %s\n", httpresp)
+		log.Debugf("Statuscode: %s\n", httpresp.StatusCode)
 		status = float64(httpresp.StatusCode)
 		respbodybuf, err := ioutil.ReadAll(httpresp.Body)
 
@@ -184,10 +184,10 @@ func httpCall(req Request, respPipe chan []byte) {
 	case "GET":
 		var statusget float64
 		statusget = 200
-		log.Debugf("post body: %v\n", req.Body)
+		log.Debugf("post body: %s\n", req.Body)
 		httpgetresp, err := http.Get(req.Url)
 		if err != nil {
-			log.Errorf("GET response error: %v\n", err)
+			log.Errorf("GET response error: %s\n", err)
 			resp = Response{
 				Id:     req.Id,
 				Status: InvalidResponseCode,
@@ -195,8 +195,8 @@ func httpCall(req Request, respPipe chan []byte) {
 			}
 			break
 		}
-		log.Debugf("httpgetresp: %v\n", httpgetresp)
-		log.Debugf("Statuscode: %v\n", httpgetresp.StatusCode)
+		log.Debugf("httpgetresp: %s\n", httpgetresp)
+		log.Debugf("Statuscode: %s\n", httpgetresp.StatusCode)
 		statusget = float64(httpgetresp.StatusCode)
 		respbodybuf, err := ioutil.ReadAll(httpgetresp.Body)
 		// check error
@@ -223,7 +223,7 @@ func httpCall(req Request, respPipe chan []byte) {
 		}
 	}
 	// return response via chan
-	log.Debugf("resp: %v\n", resp)
+	log.Debugf("resp: %s\n", resp)
 	jsonbuf, err := json.Marshal(&resp)
 	if err != nil {
 		log.Error(errors.New("Not a JSON response"))
@@ -245,7 +245,7 @@ func (device Http) Start(channel chan message.Message) error {
 		for {
 			select {
 			case msgBuf = <-readPipe:
-				log.Debugf("msgBuf to send: %v", msgBuf)
+				log.Debugf("msgBuf to send: %s", msgBuf)
 				msg := message.Message{
 					Sender:     device.Name,
 					Type:       device.Type,
@@ -256,11 +256,11 @@ func (device Http) Start(channel chan message.Message) error {
 				}
 				channel <- msg
 			case msg, _ := <-device.HttpChan.Chan:
-				log.Debugf("msg topic:, %v / %v", msg.Topic, device.Name)
+				log.Debugf("msg topic:, %s / %s", msg.Topic, device.Name)
 				if device.SubscribeTopic.Str == "" || !strings.HasSuffix(msg.Topic, device.SubscribeTopic.Str) {
 					continue
 				}
-				log.Debugf("msg reached to device, %v", msg)
+				log.Debugf("msg reached to device, %s", msg)
 
 				// compatible type to nested JSON
 				var reqJson map[string]interface{}
@@ -298,7 +298,7 @@ func (device Http) Start(channel chan message.Message) error {
 }
 
 func (device Http) Stop() error {
-	log.Infof("closing http: %v", device.Name)
+	log.Infof("closing http: %s", device.Name)
 	return nil
 }
 
