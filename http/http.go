@@ -164,10 +164,12 @@ func httpCall(req Request, respPipe chan []byte) {
 
 		log.Debugf("httpresp: %s\n", httpresp)
 		log.Debugf("Statuscode: %s\n", httpresp.StatusCode)
-		status = float64(httpresp.StatusCode)
+
 		respbodybuf, err := ioutil.ReadAll(httpresp.Body)
+		defer httpresp.Body.Close()
 
 		// check error
+		status = float64(httpresp.StatusCode)
 		if err != nil {
 			status = InvalidResponseCode
 			respbodybuf = []byte("")
@@ -180,7 +182,6 @@ func httpCall(req Request, respPipe chan []byte) {
 			Status: status,
 			Body:   json.RawMessage(respbodystr),
 		}
-		defer httpresp.Body.Close()
 	case "GET":
 		var statusget float64
 		statusget = 200
