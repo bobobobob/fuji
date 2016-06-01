@@ -76,7 +76,7 @@ func StartByFileWithChannel(conf config.Config, commandChannel chan string) erro
 		}
 	}
 
-	// optional and start immediately
+	// start http first
 	http, httpChannels, err := http.NewHttp(conf, brokerList)
 	if err != nil {
 		log.Warnf("http create error, %v", err)
@@ -84,6 +84,13 @@ func StartByFileWithChannel(conf config.Config, commandChannel chan string) erro
 	} else {
 		http.AddSubscribe()
 		gw.HttpChannels = httpChannels
+	}
+	if len(httpChannels) > 0 {
+		log.Info("http start")
+		err := http.Start(gw.MsgChan)
+		if err != nil {
+			log.Errorf("http start error, %v", err)
+		}
 	}
 
 	// Start brokers and devices
@@ -99,14 +106,6 @@ func StartByFileWithChannel(conf config.Config, commandChannel chan string) erro
 		if err != nil {
 			log.Errorf("device start error, %v", err)
 			continue
-		}
-	}
-	// start http
-	if len(httpChannels) > 0 {
-		log.Info("http start")
-		err := http.Start(gw.MsgChan)
-		if err != nil {
-			log.Errorf("http start error, %v", err)
 		}
 	}
 
