@@ -115,7 +115,7 @@ func NewHttp(conf config.Config, brokers []*broker.Broker) (Http, []HttpChannel,
 
 		return ret, httpChannels, nil
 	}
-	return ret, NewHttpChannels(), fmt.Errorf("no http found")
+	return ret, NewHttpChannels(), fmt.Errorf("no http section found in configuration")
 }
 
 func (device *Http) Validate() error {
@@ -148,8 +148,8 @@ func httpCall(req Request, respPipe chan []byte) {
 		var status float64
 		status = 200
 
-		log.Infof("post URL: %v\n", req.Url)
-		log.Infof("post body: %v\n", req.Body)
+		log.Debugf("post URL: %v\n", req.Url)
+		log.Debugf("post body: %v\n", req.Body)
 		reqbody := strings.NewReader(req.Body)
 		httpresp, err := http.Post(req.Url, "application/json;charset=utf-8", reqbody)
 		if err != nil {
@@ -162,8 +162,8 @@ func httpCall(req Request, respPipe chan []byte) {
 			break
 		}
 
-		log.Infof("httpresp: %v\n", httpresp)
-		log.Infof("Statuscode: %v\n", httpresp.StatusCode)
+		log.Debugf("httpresp: %v\n", httpresp)
+		log.Debugf("Statuscode: %v\n", httpresp.StatusCode)
 		status = float64(httpresp.StatusCode)
 		respbodybuf, err := ioutil.ReadAll(httpresp.Body)
 
@@ -174,7 +174,7 @@ func httpCall(req Request, respPipe chan []byte) {
 		}
 		// make response data
 		respbodystr := string(respbodybuf)
-		log.Infof("POST response body: %s", respbodystr)
+		log.Debugf("POST response body: %s", respbodystr)
 		resp = Response{
 			Id:     req.Id,
 			Status: status,
@@ -184,7 +184,7 @@ func httpCall(req Request, respPipe chan []byte) {
 	case "GET":
 		var statusget float64
 		statusget = 200
-		log.Infof("post body: %v\n", req.Body)
+		log.Debugf("post body: %v\n", req.Body)
 		httpgetresp, err := http.Get(req.Url)
 		if err != nil {
 			log.Errorf("GET response error: %v\n", err)
@@ -195,8 +195,8 @@ func httpCall(req Request, respPipe chan []byte) {
 			}
 			break
 		}
-		log.Infof("httpgetresp: %v\n", httpgetresp)
-		log.Infof("Statuscode: %v\n", httpgetresp.StatusCode)
+		log.Debugf("httpgetresp: %v\n", httpgetresp)
+		log.Debugf("Statuscode: %v\n", httpgetresp.StatusCode)
 		statusget = float64(httpgetresp.StatusCode)
 		respbodybuf, err := ioutil.ReadAll(httpgetresp.Body)
 		// check error
@@ -206,7 +206,7 @@ func httpCall(req Request, respPipe chan []byte) {
 		}
 
 		respbodystr := string(respbodybuf)
-		log.Infof("GET response body: %s", respbodystr)
+		log.Debugf("GET response body: %s", respbodystr)
 		resp = Response{
 			Id:     req.Id,
 			Status: statusget,
@@ -223,7 +223,7 @@ func httpCall(req Request, respPipe chan []byte) {
 		}
 	}
 	// return response via chan
-	log.Infof("resp: %v\n", resp)
+	log.Debugf("resp: %v\n", resp)
 	jsonbuf, err := json.Marshal(&resp)
 	if err != nil {
 		log.Error(errors.New("Not a JSON response"))
@@ -256,11 +256,11 @@ func (device Http) Start(channel chan message.Message) error {
 				}
 				channel <- msg
 			case msg, _ := <-device.HttpChan.Chan:
-				log.Infof("msg topic:, %v / %v", msg.Topic, device.Name)
+				log.Debugf("msg topic:, %v / %v", msg.Topic, device.Name)
 				if device.SubscribeTopic.Str == "" || !strings.HasSuffix(msg.Topic, device.SubscribeTopic.Str) {
 					continue
 				}
-				log.Infof("msg reached to device, %v", msg)
+				log.Debugf("msg reached to device, %v", msg)
 
 				// compatible type to nested JSON
 				var reqJson map[string]interface{}
@@ -290,7 +290,7 @@ func (device Http) Start(channel chan message.Message) error {
 					Body:   string(bodyJson),
 				}
 				go httpCall(req, readPipe)
-				log.Infof("http request issued")
+				log.Debugf("http request issued")
 			}
 		}
 	}()
