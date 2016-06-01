@@ -15,6 +15,7 @@
 package device
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -25,6 +26,10 @@ import (
 
 func TestNewBLEDevice(t *testing.T) {
 	assert := assert.New(t)
+
+	if os.Getenv("CI") == "true" {
+		t.Skip("BLE test skipped in CI")
+	}
 
 	configStr := `
 [device."dora"]
@@ -51,6 +56,10 @@ func TestNewBLEDevice(t *testing.T) {
 func TestNewBLEDeviceInvalidInterval(t *testing.T) {
 	assert := assert.New(t)
 
+	if os.Getenv("CI") == "true" {
+		t.Skip("BLE test skipped in CI")
+	}
+
 	configStr := `
 [device."dora"]
     type = "ble"
@@ -68,6 +77,10 @@ func TestNewBLEDeviceInvalidInterval(t *testing.T) {
 func TestNewBLEDeviceInvalidQoS(t *testing.T) {
 	assert := assert.New(t)
 
+	if os.Getenv("CI") == "true" {
+		t.Skip("BLE test skipped in CI")
+	}
+
 	configStr := `
 [device."dora"]
     type = "ble"
@@ -84,6 +97,10 @@ func TestNewBLEDeviceInvalidQoS(t *testing.T) {
 func TestNewBLEDeviceInvalidBroker(t *testing.T) {
 	assert := assert.New(t)
 
+	if os.Getenv("CI") == "true" {
+		t.Skip("BLE test skipped in CI")
+	}
+
 	configStr := `
 [device."dora"]
     type = "ble"
@@ -99,6 +116,10 @@ func TestNewBLEDeviceInvalidBroker(t *testing.T) {
 
 func TestNewBLEDeviceNoUUID(t *testing.T) {
 	assert := assert.New(t)
+
+	if os.Getenv("CI") == "true" {
+		t.Skip("BLE test skipped in CI")
+	}
 
 	configStr := `
 [device."dora"]
