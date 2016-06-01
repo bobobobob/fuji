@@ -184,7 +184,7 @@ func httpCall(req Request, respPipe chan []byte) {
 	case "GET":
 		var statusget float64
 		statusget = 200
-		log.Debugf("post body: %s\n", req.Body)
+		log.Debugf("request body: %s\n", req.Body)
 		httpgetresp, err := http.Get(req.Url)
 		if err != nil {
 			log.Errorf("GET response error: %s\n", err)
