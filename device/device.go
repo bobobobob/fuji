@@ -36,35 +36,33 @@ func NewDevices(conf config.Config, brokers []*broker.Broker) ([]Devicer, []Devi
 
 	var err error
 	for _, section := range conf.Sections {
-		switch section.Type {
-		case "device":
-			var device Devicer
-
-			devChan := NewDeviceChannel()
-			devChannels = append(devChannels, devChan)
-
-			switch section.Values["type"] {
-			case "dummy":
-				device, err = NewDummyDevice(section, brokers, devChan)
-				if err != nil {
-					log.Errorf("could not create dummy device, %v", err)
-					continue
-				}
-			case "serial":
-				device, err = NewSerialDevice(section, brokers, devChan)
-				if err != nil {
-					log.Errorf("could not create serial device, %v", err)
-					continue
-				}
-			default:
-				log.Warnf("unknown device type, %v", section.Arg)
-				continue
-			}
-			ret = append(ret, device)
-			continue
-		default:
+		if section.Type != "device" {
 			continue
 		}
+		var device Devicer
+
+		devChan := NewDeviceChannel()
+		devChannels = append(devChannels, devChan)
+
+		switch section.Values["type"] {
+		case "dummy":
+			device, err = NewDummyDevice(section, brokers, devChan)
+			if err != nil {
+				log.Errorf("could not create dummy device, %v", err)
+				continue
+			}
+		case "serial":
+			device, err = NewSerialDevice(section, brokers, devChan)
+			if err != nil {
+				log.Errorf("could not create serial device, %v", err)
+				continue
+			}
+		default:
+			log.Warnf("unknown device type, %v", section.Arg)
+			continue
+		}
+		ret = append(ret, device)
+		continue
 	}
 
 	return ret, devChannels, nil
