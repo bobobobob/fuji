@@ -15,7 +15,6 @@
 package http
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -37,8 +36,8 @@ func TestNewHttp(t *testing.T) {
 	assert.Nil(err)
 	b1 := &broker.Broker{Name: "sango"}
 	brokers := []*broker.Broker{b1}
-	fmt.Printf("conf:%v\n", conf)
-	fmt.Printf("conf.Sections:%v\n", conf.Sections)
+	t.Logf("conf:%s\n", conf)
+	t.Logf("conf.Sections:%s\n", conf.Sections)
 	b, httpchannels, err := NewHttp(conf, brokers)
 	assert.Nil(err)
 	assert.NotNil(httpchannels)
