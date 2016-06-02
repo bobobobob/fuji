@@ -43,6 +43,12 @@ type Http struct {
 	HttpChan       HttpChannel         // GW -> http
 }
 
+type HTTPError struct {
+	Id     string
+	Status int
+	Body   string
+}
+
 const InvalidResponseCode = 502
 
 func (device Http) String() string {
@@ -268,17 +274,37 @@ func (device Http) Start(channel chan message.Message) error {
 				var jsonbuf []byte
 
 				err := json.Unmarshal(msg.Body, &reqJson)
-				// JSON error : 502 (InvalidResponseCode)
+				// JSON error would cause: 502 (InvalidResponseCode)
 				if err != nil {
 					log.Error(err)
-					jsonbuf = []byte(`{"id": "", "status": ` + strconv.Itoa(InvalidResponseCode) + `, "body":"{}"}`)
+					reqJsonError := HTTPError{
+						Id:     "",
+						Status: InvalidResponseCode,
+						Body:   "{}",
+					}
+					reqJsonErrorStr, err := json.Marshal(reqJsonError)
+					if err != nil {
+						log.Error(err)
+						continue
+					}
+					jsonbuf = []byte(reqJsonErrorStr)
 					readPipe <- jsonbuf
 					continue
 				}
 				bodyJson, err := json.Marshal(reqJson["body"].(map[string]interface{}))
 				if err != nil {
 					log.Error(err)
-					jsonbuf = []byte(`{"id": "", "status": ` + strconv.Itoa(InvalidResponseCode) + `, "body":"{}"}`)
+					respJsonError := HTTPError{
+						Id:     reqJson["id"].(string),
+						Status: InvalidResponseCode,
+						Body:   "{}",
+					}
+					respJsonErrorStr, err := json.Marshal(respJsonError)
+					if err != nil {
+						log.Error(err)
+						continue
+					}
+					jsonbuf = []byte(respJsonErrorStr)
 					readPipe <- jsonbuf
 					continue
 				}
