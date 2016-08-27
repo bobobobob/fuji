@@ -43,10 +43,17 @@ type Http struct {
 	HttpChan       HttpChannel         // GW -> http
 }
 
-type HTTPError struct {
-	Id     string
-	Status int
-	Body   string
+type Request struct {
+	Id     string `json:"id"`
+	Url    string `json:"url"`
+	Method string `json:"method"`
+	Body   string `json:"body"`
+}
+
+type Response struct {
+	Id     string          `json:"id"`
+	Status float64         `json:"status"`
+	Body   json.RawMessage `json:"body"`
 }
 
 const InvalidResponseCode = 502
@@ -133,19 +140,6 @@ func (device *Http) Validate() error {
 	return nil
 }
 
-type Request struct {
-	Id     string `json:"id"`
-	Url    string `json:"url"`
-	Method string `json:"method"`
-	Body   string `json:"body"`
-}
-
-type Response struct {
-	Id     string          `json:"id"`
-	Status float64         `json:"status"`
-	Body   json.RawMessage `json:"body"`
-}
-
 func httpCall(req Request, respPipe chan []byte) {
 	var resp Response
 
@@ -226,7 +220,7 @@ func httpCall(req Request, respPipe chan []byte) {
 		resp = Response{
 			Id:     req.Id,
 			Status: InvalidResponseCode,
-			Body:   json.RawMessage(""),
+			Body:   json.RawMessage(`{}`),
 		}
 	}
 	// return response via chan
@@ -242,7 +236,7 @@ func httpCall(req Request, respPipe chan []byte) {
 
 func (device Http) Start(channel chan message.Message) error {
 
-	readPipe := make(chan []byte)
+	readPipe := make(chan []byte, 2)
 
 	log.Info("start http device")
 
@@ -277,12 +271,12 @@ func (device Http) Start(channel chan message.Message) error {
 				// JSON error would cause: 502 (InvalidResponseCode)
 				if err != nil {
 					log.Error(err)
-					reqJsonError := HTTPError{
+					reqJsonError := Response{
 						Id:     "",
 						Status: InvalidResponseCode,
-						Body:   "{}",
+						Body:   json.RawMessage(`{}`),
 					}
-					reqJsonErrorStr, err := json.Marshal(reqJsonError)
+					reqJsonErrorStr, err := json.Marshal(&reqJsonError)
 					if err != nil {
 						log.Error(err)
 						continue
@@ -292,21 +286,32 @@ func (device Http) Start(channel chan message.Message) error {
 					continue
 				}
 
+				// check id first to return message
+				originIdStr, idIsStr := reqJson["id"].(string)
+				if !idIsStr {
+					log.Error("id is nil. No way to return message")
+					continue
+				}
+
 				// check required elements
 				nilElements := false
-				reqElements := []string{"id", "url", "method", "body"}
-				for _, t := range reqElements {
+				requiredElements := []string{"url", "method", "body"}
+				for _, t := range requiredElements {
+					log.Debugf("JSON element %v: %v", t, reqJson[t])
 					if reqJson[t] == nil {
+						nilErr := errors.New(fmt.Sprintf("element %v is not string or nil", t))
+						log.Error(nilErr)
 						nilElements = true
 					}
 				}
 				if nilElements {
-					reqJsonError := HTTPError{
-						Id:     "",
+					log.Error("Some required JSON element are missing")
+					reqJsonError := Response{
+						Id:     originIdStr,
 						Status: InvalidResponseCode,
-						Body:   "{}",
+						Body:   json.RawMessage(`{}`),
 					}
-					reqJsonErrorStr, err := json.Marshal(reqJsonError)
+					reqJsonErrorStr, err := json.Marshal(&reqJsonError)
 					if err != nil {
 						log.Error(err)
 						continue
@@ -319,12 +324,12 @@ func (device Http) Start(channel chan message.Message) error {
 				// body shall be JSON object
 				mapBodyJson, found := reqJson["body"].(map[string]interface{})
 				if !found {
-					reqJsonError := HTTPError{
-						Id:     "",
+					reqJsonError := Response{
+						Id:     originIdStr,
 						Status: InvalidResponseCode,
-						Body:   "{}",
+						Body:   json.RawMessage(`{}`),
 					}
-					reqJsonErrorStr, err := json.Marshal(reqJsonError)
+					reqJsonErrorStr, err := json.Marshal(&reqJsonError)
 					if err != nil {
 						log.Error(err)
 						continue
@@ -337,12 +342,12 @@ func (device Http) Start(channel chan message.Message) error {
 				bodyJson, err := json.Marshal(mapBodyJson)
 				if err != nil {
 					log.Error(err)
-					respJsonError := HTTPError{
-						Id:     reqJson["id"].(string),
+					respJsonError := Response{
+						Id:     originIdStr,
 						Status: InvalidResponseCode,
-						Body:   "{}",
+						Body:   json.RawMessage(`{}`),
 					}
-					respJsonErrorStr, err := json.Marshal(respJsonError)
+					respJsonErrorStr, err := json.Marshal(&respJsonError)
 					if err != nil {
 						log.Error(err)
 						continue
@@ -354,7 +359,7 @@ func (device Http) Start(channel chan message.Message) error {
 
 				// issue HTTP request
 				req := Request{
-					Id:     reqJson["id"].(string),
+					Id:     originIdStr,
 					Url:    reqJson["url"].(string),
 					Method: reqJson["method"].(string),
 					Body:   string(bodyJson),

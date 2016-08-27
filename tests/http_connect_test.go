@@ -129,6 +129,35 @@ func TestHttpConnectPostLocalPubSub(t *testing.T) {
 	generalTestProcess(t, httpConfigStr, expected, httpTestServerEchoBack)
 }
 
+func TestHttpConnectBadJSONNoMethodRequesttLocalPubSub(t *testing.T) {
+	expected := []string{
+		`{"id":"aasfa","url":"`,
+		`","body":{"a":"b"}}`,
+		`NOT USED`,
+		`{"id":"aasfa","status":` + strconv.Itoa(MYHTTP.InvalidResponseCode) + `,"body":{}}`,
+	}
+
+	var httpConfigStr = `
+[gateway]
+
+    name = "httppostnomethod"
+
+[[broker."mosquitto/1"]]
+
+    host = "localhost"
+    port = 1883
+    topic_prefix = "prefix"
+
+    retry_interval = 10
+
+[http]
+    broker = "mosquitto"
+    qos = 0
+    enabled = true
+`
+	generalTestProcess(t, httpConfigStr, expected, httpTestServerEchoBack)
+}
+
 func TestHttpConnectGetLocalPubSub(t *testing.T) {
 	expected := []string{
 		`{"id":"aasfa","url":"`,
