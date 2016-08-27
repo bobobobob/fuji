@@ -172,6 +172,21 @@
 #    [[status."ip_address"]]
 #    interface = "all"`
 
+##
+## 1.5 HTTP API
+##
+
+#	[http]
+#
+# # specify broker to connect
+#	broker = "sango"
+#
+# # QoS level
+#	qos = 0
+#
+# # enable
+#	enabled = true
+
 ###########################################
 ## section 2. complete configuration samples 
 ## 
@@ -282,3 +297,21 @@
 
 #    [[status."ip_address"]]
 #    interface = "all"
+
+##
+## 2.5 HTTP API gateway
+##
+
+#    [gateway]
+#    name = "ham"
+#
+#    [[broker."sango"]]
+#    host = "127.0.0.1"
+#    port = 1883
+#    username = "USERNAME"
+#    password = "PASSWORD"
+#
+#    [http]
+#    broker = "sango"
+#    qos = 0
+#    enabled = true
