@@ -269,7 +269,7 @@ func (device Http) Start(channel chan message.Message) error {
 				}
 				log.Debugf("msg reached to device, %s", msg)
 
-				// compatible type to nested JSON
+				// nested JSON compatible type
 				var reqJson map[string]interface{}
 				var jsonbuf []byte
 
@@ -291,7 +291,50 @@ func (device Http) Start(channel chan message.Message) error {
 					readPipe <- jsonbuf
 					continue
 				}
-				bodyJson, err := json.Marshal(reqJson["body"].(map[string]interface{}))
+
+				// check required elements
+				nilElements := false
+				reqElements := []string{"id", "url", "method", "body"}
+				for _, t := range reqElements {
+					if reqJson[t] == nil {
+						nilElements = true
+					}
+				}
+				if nilElements {
+					reqJsonError := HTTPError{
+						Id:     "",
+						Status: InvalidResponseCode,
+						Body:   "{}",
+					}
+					reqJsonErrorStr, err := json.Marshal(reqJsonError)
+					if err != nil {
+						log.Error(err)
+						continue
+					}
+					jsonbuf = []byte(reqJsonErrorStr)
+					readPipe <- jsonbuf
+					continue
+				}
+
+				// body shall be JSON object
+				mapBodyJson, found := reqJson["body"].(map[string]interface{})
+				if !found {
+					reqJsonError := HTTPError{
+						Id:     "",
+						Status: InvalidResponseCode,
+						Body:   "{}",
+					}
+					reqJsonErrorStr, err := json.Marshal(reqJsonError)
+					if err != nil {
+						log.Error(err)
+						continue
+					}
+					jsonbuf = []byte(reqJsonErrorStr)
+					readPipe <- jsonbuf
+					continue
+				}
+
+				bodyJson, err := json.Marshal(mapBodyJson)
 				if err != nil {
 					log.Error(err)
 					respJsonError := HTTPError{
