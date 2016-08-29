@@ -286,15 +286,18 @@ func (device Http) Start(channel chan message.Message) error {
 					continue
 				}
 
+				// check required elements
+				nilElements := false
+
 				// check id first to return message
 				originIdStr, idIsStr := reqJson["id"].(string)
 				if !idIsStr {
 					log.Error("id is nil. No way to return message")
-					continue
+					originIdStr = ""
+					nilElements = true
 				}
 
-				// check required elements
-				nilElements := false
+				// check other required elements than id
 				requiredElements := []string{"url", "method", "body"}
 				for _, t := range requiredElements {
 					log.Debugf("JSON element %v: %v", t, reqJson[t])

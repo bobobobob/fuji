@@ -129,6 +129,64 @@ func TestHttpConnectPostLocalPubSub(t *testing.T) {
 	generalTestProcess(t, httpConfigStr, expected, httpTestServerEchoBack)
 }
 
+func TestHttpConnectBadJSONNoIdRequesttLocalPubSub(t *testing.T) {
+	expected := []string{
+		`{"url":"`,
+		`","method": "POST", "body":{"a":"b"}}`,
+		`NOT USED`,
+		`{"id":"","status":` + strconv.Itoa(MYHTTP.InvalidResponseCode) + `,"body":{}}`,
+	}
+
+	var httpConfigStr = `
+[gateway]
+
+    name = "httppostnoid"
+
+[[broker."mosquitto/1"]]
+
+    host = "localhost"
+    port = 1883
+    topic_prefix = "prefix"
+
+    retry_interval = 10
+
+[http]
+    broker = "mosquitto"
+    qos = 0
+    enabled = true
+`
+	generalTestProcess(t, httpConfigStr, expected, httpTestServerEchoBack)
+}
+
+func TestHttpConnectBadJSONNoUrlRequesttLocalPubSub(t *testing.T) {
+	expected := []string{
+		`{"id":"aasfa","urll":"`,
+		`","method": "POST", "body":{"a":"b"}}`,
+		`NOT USED`,
+		`{"id":"aasfa","status":` + strconv.Itoa(MYHTTP.InvalidResponseCode) + `,"body":{}}`,
+	}
+
+	var httpConfigStr = `
+[gateway]
+
+    name = "httppostnourl"
+
+[[broker."mosquitto/1"]]
+
+    host = "localhost"
+    port = 1883
+    topic_prefix = "prefix"
+
+    retry_interval = 10
+
+[http]
+    broker = "mosquitto"
+    qos = 0
+    enabled = true
+`
+	generalTestProcess(t, httpConfigStr, expected, httpTestServerEchoBack)
+}
+
 func TestHttpConnectBadJSONNoMethodRequesttLocalPubSub(t *testing.T) {
 	expected := []string{
 		`{"id":"aasfa","url":"`,
@@ -141,6 +199,35 @@ func TestHttpConnectBadJSONNoMethodRequesttLocalPubSub(t *testing.T) {
 [gateway]
 
     name = "httppostnomethod"
+
+[[broker."mosquitto/1"]]
+
+    host = "localhost"
+    port = 1883
+    topic_prefix = "prefix"
+
+    retry_interval = 10
+
+[http]
+    broker = "mosquitto"
+    qos = 0
+    enabled = true
+`
+	generalTestProcess(t, httpConfigStr, expected, httpTestServerEchoBack)
+}
+
+func TestHttpConnectBadJSONNoBodyRequesttLocalPubSub(t *testing.T) {
+	expected := []string{
+		`{"id":"aasfa","url":"`,
+		`","method": "POST"}`,
+		`NOT USED`,
+		`{"id":"aasfa","status":` + strconv.Itoa(MYHTTP.InvalidResponseCode) + `,"body":{}}`,
+	}
+
+	var httpConfigStr = `
+[gateway]
+
+    name = "httppostnobody"
 
 [[broker."mosquitto/1"]]
 
@@ -347,12 +434,12 @@ func generalTestProcess(t *testing.T, httpConfigStr string, expected []string, h
 		}
 		err = json.Unmarshal([]byte(expectedJson), &expectedJsonMap)
 		assert.Nil(err)
-
-		if respJsonMap["status"] == 200 {
-			assert.Equal(expectedJson, message[1])
-		} else {
-			assert.Equal(expectedJsonMap["status"], respJsonMap["status"])
+		assert.Equal(expectedJsonMap["id"], respJsonMap["id"])
+		assert.Equal(expectedJsonMap["status"], respJsonMap["status"])
+		if expectedJsonBody != "NOT USED" {
+			assert.Equal(expectedJsonMap["body"], respJsonMap["body"])
 		}
+
 	case <-time.After(time.Second * 11):
 		assert.Equal("subscribe completed in 11 sec", "not completed")
 	}
