@@ -21,6 +21,7 @@ import (
 	"github.com/shiguredo/fuji/config"
 	"github.com/shiguredo/fuji/device"
 	"github.com/shiguredo/fuji/gateway"
+	"github.com/shiguredo/fuji/http"
 )
 
 // Start make command channel and start gateway.
@@ -72,6 +73,23 @@ func StartByFileWithChannel(conf config.Config, commandChannel chan string) erro
 		if err != nil {
 			log.Errorf("device subscribe error, %v", err)
 			continue
+		}
+	}
+
+	// start http first
+	http, httpChannels, err := http.NewHttp(conf, brokerList)
+	if err != nil {
+		log.Warnf("http create error, %v", err)
+		// run whenever http created
+	} else {
+		http.AddSubscribe()
+		gw.HttpChannels = httpChannels
+	}
+	if len(httpChannels) > 0 {
+		log.Info("http start")
+		err := http.Start(gw.MsgChan)
+		if err != nil {
+			log.Errorf("http start error, %v", err)
 		}
 	}
 

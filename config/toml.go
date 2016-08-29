@@ -49,6 +49,7 @@ type ConfigToml struct {
 	Brokers SectionMap `toml:"broker"`
 	Devices SectionMap `toml:"device"`
 	Status  SectionMap `toml:"status"`
+	Http    SectionMap `toml:"http"`
 }
 
 type SectionMap map[string]interface{}

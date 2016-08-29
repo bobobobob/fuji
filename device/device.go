@@ -39,7 +39,6 @@ func NewDevices(conf config.Config, brokers []*broker.Broker) ([]Devicer, []Devi
 		if section.Type != "device" {
 			continue
 		}
-
 		var device Devicer
 
 		devChan := NewDeviceChannel()
@@ -63,6 +62,7 @@ func NewDevices(conf config.Config, brokers []*broker.Broker) ([]Devicer, []Devi
 			continue
 		}
 		ret = append(ret, device)
+		continue
 	}
 
 	return ret, devChannels, nil

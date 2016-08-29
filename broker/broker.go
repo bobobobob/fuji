@@ -312,6 +312,8 @@ func (b *Broker) GenerateTopic(msg *message.Message) (message.TopicString, error
 	switch msg.Sender {
 	case "status": // status device topic structure is difference
 		topicString = strings.Join([]string{b.TopicPrefix, msg.Topic}, "/")
+	case "http": // http device topic is fixed
+		topicString = strings.Join([]string{b.TopicPrefix, b.GatewayName, "http/response"}, "/")
 	default:
 		topicString = strings.Join([]string{b.TopicPrefix, b.GatewayName, msg.Sender, msg.Type, "publish"}, "/")
 	}
