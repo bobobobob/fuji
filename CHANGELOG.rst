@@ -19,6 +19,7 @@ develop
 UPDATE
 
 - build: update gopsutil.
+- build: Golang version 1.6.2
 
 1.0.2
 =====
