@@ -36,7 +36,7 @@ test:
         pwd: ../.go_workspace/src/${REPO_PATH}
     - make build:
         pwd: ../.go_workspace/src/${REPO_PATH}
-    - go test -v -coverpkg github.com/shiguredo/fuji $(glide novendor):
+    - go test -timeout 200s -v -coverpkg github.com/shiguredo/fuji $(glide novendor):
         pwd: ../.go_workspace/src/${REPO_PATH}
   post:
     - make arm5 arm6 arm7 linux_386 linux_amd64 raspi raspi2 armadillo edison:
