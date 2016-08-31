@@ -444,6 +444,7 @@ func generalTestProcess(t *testing.T, httpConfigStr string, expected []string, h
 		assert.Equal("subscribe completed in 11 sec", "not completed")
 	}
 
+	time.Sleep(200 * time.Millisecond)
 	client.Disconnect(20)
 	httpCmdChan <- "done"
 	time.Sleep(1 * time.Second)
