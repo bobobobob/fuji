@@ -403,6 +403,8 @@ func generalTestProcess(t *testing.T, httpConfigStr string, expected []string, h
 	opts.SetCleanSession(false)
 
 	client := MQTT.NewClient(opts)
+	defer client.Disconnect(250)
+
 	assert.Nil(err)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		assert.Nil(token.Error())
@@ -444,7 +446,6 @@ func generalTestProcess(t *testing.T, httpConfigStr string, expected []string, h
 		assert.Equal("subscribe completed in 11 sec", "not completed")
 	}
 
-	client.Disconnect(20)
 	httpCmdChan <- "done"
 	time.Sleep(1 * time.Second)
 }
