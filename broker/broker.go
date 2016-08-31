@@ -60,7 +60,6 @@ type Broker struct {
 	GwChan chan message.Message
 
 	MQTTClient *MQTT.Client
-	connected  bool
 }
 
 func (broker *Broker) String() string {
@@ -230,7 +229,7 @@ func NewBrokers(conf config.Config, gwChan chan message.Message) (Brokers, error
 }
 
 func (b *Broker) IsConnected() bool {
-	if b.MQTTClient != nil && b.MQTTClient.IsConnected() && b.connected {
+	if b.MQTTClient != nil && b.MQTTClient.IsConnected() {
 		return true
 	}
 	return false
@@ -238,7 +237,6 @@ func (b *Broker) IsConnected() bool {
 
 func (b *Broker) onConnectionLost(client *MQTT.Client, reason error) {
 	log.Errorf("MQTT broker disconnected(%s): %s", b.Name, reason)
-	b.connected = false
 }
 
 func (b *Broker) onMessageReceived(client *MQTT.Client, m MQTT.Message) {
@@ -255,7 +253,6 @@ func (b *Broker) onMessageReceived(client *MQTT.Client, m MQTT.Message) {
 
 func (b *Broker) SubscribeOnConnect(client *MQTT.Client) {
 	log.Infof("client connected")
-	b.connected = true
 
 	if b.Subscribed.Length() > 0 {
 		// subscribe
