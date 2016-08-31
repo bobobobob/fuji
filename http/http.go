@@ -234,6 +234,21 @@ func httpCall(req Request, respPipe chan []byte) {
 	respPipe <- jsonbuf
 }
 
+func reportError(id string, reportPipe chan []byte) {
+	reqJsonError := Response{
+		Id:     id,
+		Status: InvalidResponseCode,
+		Body:   json.RawMessage(`{}`),
+	}
+	reqJsonErrorStr, err := json.Marshal(&reqJsonError)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	jsonbuf := []byte(reqJsonErrorStr)
+	reportPipe <- jsonbuf
+}
+
 func (device Http) Start(channel chan message.Message) error {
 
 	readPipe := make(chan []byte, 2)
@@ -246,7 +261,7 @@ func (device Http) Start(channel chan message.Message) error {
 		for {
 			select {
 			case msgBuf = <-readPipe:
-				log.Debugf("msgBuf to send: %s", msgBuf)
+				log.Infof("msgBuf to send: %s", msgBuf)
 				msg := message.Message{
 					Sender:     device.Name,
 					Type:       device.Type,
@@ -265,24 +280,12 @@ func (device Http) Start(channel chan message.Message) error {
 
 				// nested JSON compatible type
 				var reqJson map[string]interface{}
-				var jsonbuf []byte
 
 				err := json.Unmarshal(msg.Body, &reqJson)
 				// JSON error would cause: 502 (InvalidResponseCode)
 				if err != nil {
 					log.Error(err)
-					reqJsonError := Response{
-						Id:     "",
-						Status: InvalidResponseCode,
-						Body:   json.RawMessage(`{}`),
-					}
-					reqJsonErrorStr, err := json.Marshal(&reqJsonError)
-					if err != nil {
-						log.Error(err)
-						continue
-					}
-					jsonbuf = []byte(reqJsonErrorStr)
-					readPipe <- jsonbuf
+					reportError("", readPipe)
 					continue
 				}
 
@@ -309,54 +312,21 @@ func (device Http) Start(channel chan message.Message) error {
 				}
 				if nilElements {
 					log.Error("Some required JSON element are missing")
-					reqJsonError := Response{
-						Id:     originIdStr,
-						Status: InvalidResponseCode,
-						Body:   json.RawMessage(`{}`),
-					}
-					reqJsonErrorStr, err := json.Marshal(&reqJsonError)
-					if err != nil {
-						log.Error(err)
-						continue
-					}
-					jsonbuf = []byte(reqJsonErrorStr)
-					readPipe <- jsonbuf
+					reportError(originIdStr, readPipe)
 					continue
 				}
 
 				// body shall be JSON object
 				mapBodyJson, found := reqJson["body"].(map[string]interface{})
 				if !found {
-					reqJsonError := Response{
-						Id:     originIdStr,
-						Status: InvalidResponseCode,
-						Body:   json.RawMessage(`{}`),
-					}
-					reqJsonErrorStr, err := json.Marshal(&reqJsonError)
-					if err != nil {
-						log.Error(err)
-						continue
-					}
-					jsonbuf = []byte(reqJsonErrorStr)
-					readPipe <- jsonbuf
+					reportError(originIdStr, readPipe)
 					continue
 				}
 
 				bodyJson, err := json.Marshal(mapBodyJson)
 				if err != nil {
 					log.Error(err)
-					respJsonError := Response{
-						Id:     originIdStr,
-						Status: InvalidResponseCode,
-						Body:   json.RawMessage(`{}`),
-					}
-					respJsonErrorStr, err := json.Marshal(&respJsonError)
-					if err != nil {
-						log.Error(err)
-						continue
-					}
-					jsonbuf = []byte(respJsonErrorStr)
-					readPipe <- jsonbuf
+					reportError(originIdStr, readPipe)
 					continue
 				}
 
