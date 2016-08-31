@@ -39,7 +39,7 @@ func fujiHttpConnectLocalPub(t *testing.T, httpConfigStr string) {
 
 	conf, err := config.LoadConfigByte([]byte(httpConfigStr))
 	assert.Nil(err)
-	commandChannel := make(chan string)
+	commandChannel := make(chan string, 2)
 	go fuji.StartByFileWithChannel(conf, commandChannel)
 	t.Logf("fuji started")
 	time.Sleep(10 * time.Second)
@@ -371,7 +371,7 @@ func generalTestProcess(t *testing.T, httpConfigStr string, expected []string, h
 	time.Sleep(1 * time.Second)
 
 	// start http server
-	httpCmdChan := make(chan string)
+	httpCmdChan := make(chan string, 2)
 	go httpTestServer(t, httpCmdChan, expectedJsonBody)
 	// wait for bootup
 	listener := <-httpCmdChan
@@ -394,7 +394,7 @@ func generalTestProcess(t *testing.T, httpConfigStr string, expected []string, h
 
 	// Setup MQTT pub/sub client to confirm published content.
 	//
-	subscriberChannel := make(chan [2]string)
+	subscriberChannel := make(chan [2]string, 2)
 
 	opts := MQTT.NewClientOptions()
 	url := fmt.Sprintf("tcp://%s:%d", brokerList[0].Host, brokerList[0].Port)
