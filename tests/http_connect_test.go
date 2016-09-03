@@ -23,6 +23,7 @@ import (
 	"testing"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/stretchr/testify/assert"
 
@@ -33,8 +34,12 @@ import (
 	MYHTTP "github.com/shiguredo/fuji/http"
 )
 
+func init() {
+	log.SetLevel(log.DebugLevel)
+}
+
 // Fuji for TestHttpConnectLocalPub
-func fujiHttpConnectLocalPub(t *testing.T, httpConfigStr string) {
+func fujiHttpConnectLocalPub(t *testing.T, httpConfigStr string) chan string {
 	assert := assert.New(t)
 
 	conf, err := config.LoadConfigByte([]byte(httpConfigStr))
@@ -42,11 +47,7 @@ func fujiHttpConnectLocalPub(t *testing.T, httpConfigStr string) {
 	commandChannel := make(chan string, 2)
 	go fuji.StartByFileWithChannel(conf, commandChannel)
 	t.Logf("fuji started")
-	time.Sleep(10 * time.Second)
-	t.Logf("fuji wait completed")
-	commandChannel <- "close"
-	// wait to stop fuji
-	time.Sleep(1 * time.Second)
+	return commandChannel
 }
 
 // HTTP server with JSON response
@@ -64,6 +65,7 @@ func httpTestServerEchoBack(t *testing.T, cmdChan chan string, expectedJsonBody 
 
 	// wait operation complete
 	<-cmdChan
+	t.Log("httpd shutdown request has come")
 }
 
 func httpTestServerRedirect(t *testing.T, cmdChan chan string, expectedJsonBody string) {
@@ -362,13 +364,15 @@ func TestHttpConnectNotFoundGetLocalPubSub(t *testing.T) {
 }
 
 func generalTestProcess(t *testing.T, httpConfigStr string, expected []string, httpTestServer func(*testing.T, chan string, string)) {
+	// initial wait for previous subscriber client shutdown
+	time.Sleep(500 * time.Millisecond)
+
 	assert := assert.New(t)
 
 	requestJson_pre, requestJson_post, expectedJsonBody, expectedJson := expected[0], expected[1], expected[2], expected[3]
 
 	// start fuji
-	go fujiHttpConnectLocalPub(t, httpConfigStr)
-	time.Sleep(1 * time.Second)
+	commandChannel := fujiHttpConnectLocalPub(t, httpConfigStr)
 
 	// start http server
 	httpCmdChan := make(chan string, 2)
@@ -406,21 +410,25 @@ func generalTestProcess(t *testing.T, httpConfigStr string, expected []string, h
 	defer client.Disconnect(250)
 
 	assert.Nil(err)
-	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		assert.Nil(token.Error())
-		t.Log(token.Error())
-	}
+	token := client.Connect()
+	token.Wait()
+	assert.Nil(token.Error())
 
 	qos := 2
 	requestTopic := fmt.Sprintf("%s/%s/http/request", brokerList[0].TopicPrefix, gw.Name)
 	expectedTopic := fmt.Sprintf("%s/%s/http/response", brokerList[0].TopicPrefix, gw.Name)
 	t.Logf("expetcted topic: %s\nexpected message%s", expectedTopic, expectedJson)
-	client.Subscribe(expectedTopic, byte(qos), func(client *MQTT.Client, msg MQTT.Message) {
+	token = client.Subscribe(expectedTopic, byte(qos), func(client *MQTT.Client, msg MQTT.Message) {
+		t.Log("subscriber received topic: %s, message: %s", msg.Topic(), msg.Payload())
 		subscriberChannel <- [2]string{msg.Topic(), string(msg.Payload())}
 	})
-	// publish JSON
-	token := client.Publish(requestTopic, 0, false, requestJson_pre+listener+requestJson_post)
 	token.Wait()
+	assert.Nil(token.Error())
+
+	// publish JSON
+	token = client.Publish(requestTopic, 0, false, requestJson_pre+listener+requestJson_post)
+	token.Wait()
+	assert.Nil(token.Error())
 
 	// wait for 1 publication of dummy worker
 	t.Logf("wait for 1 publication of dummy worker")
@@ -447,5 +455,6 @@ func generalTestProcess(t *testing.T, httpConfigStr string, expected []string, h
 	}
 
 	httpCmdChan <- "done"
-	time.Sleep(1 * time.Second)
+	commandChannel <- "close"
+	time.Sleep(500 * time.Millisecond)
 }

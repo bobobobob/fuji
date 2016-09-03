@@ -58,6 +58,12 @@ type Response struct {
 
 const InvalidResponseCode = 502
 
+var readPipe chan []byte
+var httpChan HttpChannel
+
+func init() {
+}
+
 func (device Http) String() string {
 	var brokers []string
 	for _, broker := range device.Broker {
@@ -70,7 +76,7 @@ func (device Http) String() string {
 // If config validation failed, return error
 func NewHttp(conf config.Config, brokers []*broker.Broker) (Http, []HttpChannel, error) {
 
-	httpChan := NewHttpChannel()
+	httpChan = NewHttpChannel()
 	ret := Http{
 		Name:     "http",
 		Type:     "http",
@@ -162,8 +168,8 @@ func httpCall(req Request, respPipe chan []byte) {
 			break
 		}
 
-		log.Debugf("httpresp: %s\n", httpresp)
-		log.Debugf("Statuscode: %s\n", httpresp.StatusCode)
+		log.Infof("httpresp: %s\n", httpresp)
+		log.Infof("Statuscode: %s\n", httpresp.StatusCode)
 
 		respbodybuf, err := ioutil.ReadAll(httpresp.Body)
 		defer httpresp.Body.Close()
@@ -196,8 +202,8 @@ func httpCall(req Request, respPipe chan []byte) {
 			}
 			break
 		}
-		log.Debugf("httpgetresp: %s\n", httpgetresp)
-		log.Debugf("Statuscode: %s\n", httpgetresp.StatusCode)
+		log.Infof("httpgetresp: %s\n", httpgetresp)
+		log.Infof("Statuscode: %s\n", httpgetresp.StatusCode)
 		statusget = float64(httpgetresp.StatusCode)
 		respbodybuf, err := ioutil.ReadAll(httpgetresp.Body)
 		// check error
@@ -234,7 +240,8 @@ func httpCall(req Request, respPipe chan []byte) {
 	respPipe <- jsonbuf
 }
 
-func reportError(id string, reportPipe chan []byte) {
+func reportError(id string, readPipe chan []byte) {
+	log.Debug("Bad request error reporting immediately")
 	reqJsonError := Response{
 		Id:     id,
 		Status: InvalidResponseCode,
@@ -246,102 +253,108 @@ func reportError(id string, reportPipe chan []byte) {
 		return
 	}
 	jsonbuf := []byte(reqJsonErrorStr)
-	reportPipe <- jsonbuf
+	readPipe <- jsonbuf
 }
 
-func (device Http) Start(channel chan message.Message) error {
+// event routers
 
-	readPipe := make(chan []byte, 2)
-
-	log.Info("start http device")
-
+func responseRouter(device Http, channel chan message.Message, readPipe chan []byte) {
 	msgBuf := make([]byte, 65536)
+	for {
+		msgBuf = <-readPipe
+		log.Infof("msgBuf to send: %s", msgBuf)
+		msg := message.Message{
+			Sender:     device.Name,
+			Type:       device.Type,
+			QoS:        device.QoS,
+			Retained:   device.Retain,
+			BrokerName: device.BrokerName,
+			Body:       msgBuf,
+		}
+		channel <- msg
+		log.Info("message sent to %v", channel)
+	}
+}
 
-	go func() error {
-		for {
-			select {
-			case msgBuf = <-readPipe:
-				log.Infof("msgBuf to send: %s", msgBuf)
-				msg := message.Message{
-					Sender:     device.Name,
-					Type:       device.Type,
-					QoS:        device.QoS,
-					Retained:   device.Retain,
-					BrokerName: device.BrokerName,
-					Body:       msgBuf,
-				}
-				channel <- msg
-			case msg, _ := <-device.HttpChan.Chan:
-				log.Debugf("msg topic:, %s / %s", msg.Topic, device.Name)
-				if device.SubscribeTopic.Str == "" || !strings.HasSuffix(msg.Topic, device.SubscribeTopic.Str) {
-					continue
-				}
-				log.Debugf("msg reached to device, %s", msg)
+func requestRouter(device Http, readpipe chan []byte) {
+	for {
+		msg, _ := <-device.HttpChan.Chan
+		log.Infof("msg topic:, %s / %s", msg.Topic, device.Name)
+		if device.SubscribeTopic.Str == "" || !strings.HasSuffix(msg.Topic, device.SubscribeTopic.Str) {
+			continue
+		}
 
-				// nested JSON compatible type
-				var reqJson map[string]interface{}
+		// nested JSON compatible type
+		var reqJson map[string]interface{}
 
-				err := json.Unmarshal(msg.Body, &reqJson)
-				// JSON error would cause: 502 (InvalidResponseCode)
-				if err != nil {
-					log.Error(err)
-					reportError("", readPipe)
-					continue
-				}
+		err := json.Unmarshal(msg.Body, &reqJson)
+		// JSON error would cause: 502 (InvalidResponseCode)
+		if err != nil {
+			log.Error(err)
+			reportError("", readPipe)
+			continue
+		}
 
-				// check required elements
-				nilElements := false
+		// check required elements
+		nilElements := false
 
-				// check id first to return message
-				originIdStr, idIsStr := reqJson["id"].(string)
-				if !idIsStr {
-					log.Error("id is nil. No way to return message")
-					originIdStr = ""
-					nilElements = true
-				}
+		// check id first to return message
+		originIdStr, idIsStr := reqJson["id"].(string)
+		if !idIsStr {
+			log.Error("id is nil. No way to return message")
+			originIdStr = ""
+			nilElements = true
+		}
 
-				// check other required elements than id
-				requiredElements := []string{"url", "method", "body"}
-				for _, t := range requiredElements {
-					log.Debugf("JSON element %v: %v", t, reqJson[t])
-					if reqJson[t] == nil {
-						nilErr := errors.New(fmt.Sprintf("element %v is not string or nil", t))
-						log.Error(nilErr)
-						nilElements = true
-					}
-				}
-				if nilElements {
-					log.Error("Some required JSON element are missing")
-					reportError(originIdStr, readPipe)
-					continue
-				}
-
-				// body shall be JSON object
-				mapBodyJson, found := reqJson["body"].(map[string]interface{})
-				if !found {
-					reportError(originIdStr, readPipe)
-					continue
-				}
-
-				bodyJson, err := json.Marshal(mapBodyJson)
-				if err != nil {
-					log.Error(err)
-					reportError(originIdStr, readPipe)
-					continue
-				}
-
-				// issue HTTP request
-				req := Request{
-					Id:     originIdStr,
-					Url:    reqJson["url"].(string),
-					Method: reqJson["method"].(string),
-					Body:   string(bodyJson),
-				}
-				go httpCall(req, readPipe)
-				log.Debugf("http request issued")
+		// check other required elements than id
+		requiredElements := []string{"url", "method", "body"}
+		for _, t := range requiredElements {
+			log.Debugf("JSON element %v: %v", t, reqJson[t])
+			if reqJson[t] == nil {
+				nilErr := errors.New(fmt.Sprintf("element %v is not string or nil", t))
+				log.Error(nilErr)
+				nilElements = true
 			}
 		}
-	}()
+		if nilElements {
+			log.Error("Some required JSON element are missing")
+			reportError(originIdStr, readPipe)
+			continue
+		}
+
+		// body shall be JSON object
+		mapBodyJson, found := reqJson["body"].(map[string]interface{})
+		if !found {
+			reportError(originIdStr, readPipe)
+			continue
+		}
+
+		bodyJson, err := json.Marshal(mapBodyJson)
+		if err != nil {
+			log.Error(err)
+			reportError(originIdStr, readPipe)
+			continue
+		}
+
+		// issue HTTP request
+		req := Request{
+			Id:     originIdStr,
+			Url:    reqJson["url"].(string),
+			Method: reqJson["method"].(string),
+			Body:   string(bodyJson),
+		}
+		httpCall(req, readPipe)
+	}
+}
+
+// Start operation
+func (device Http) Start(channel chan message.Message) error {
+	log.Info("start http device")
+
+	readPipe = make(chan []byte)
+
+	go responseRouter(device, channel, readPipe)
+	go requestRouter(device, readPipe)
 	return nil
 }
 
