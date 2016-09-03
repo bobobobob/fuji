@@ -407,7 +407,7 @@ func generalTestProcess(t *testing.T, httpConfigStr string, expected []string, h
 	opts.SetCleanSession(false)
 
 	client := MQTT.NewClient(opts)
-	defer client.Disconnect(250)
+	// defer client.Disconnect(250)
 
 	assert.Nil(err)
 	token := client.Connect()
