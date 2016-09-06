@@ -414,7 +414,7 @@ func generalTestProcess(t *testing.T, httpConfigStr string, expected []string, h
 	token.Wait()
 	assert.Nil(token.Error())
 
-	qos := 2
+	qos := 0
 	requestTopic := fmt.Sprintf("%s/%s/http/request", brokerList[0].TopicPrefix, gw.Name)
 	expectedTopic := fmt.Sprintf("%s/%s/http/response", brokerList[0].TopicPrefix, gw.Name)
 	t.Logf("expetcted topic: %s\nexpected message%s", expectedTopic, expectedJson)
@@ -426,7 +426,7 @@ func generalTestProcess(t *testing.T, httpConfigStr string, expected []string, h
 	assert.Nil(token.Error())
 
 	// publish JSON
-	token = client.Publish(requestTopic, 0, false, requestJson_pre+listener+requestJson_post)
+	token = client.Publish(requestTopic, byte(qos), false, requestJson_pre+listener+requestJson_post)
 	token.Wait()
 	assert.Nil(token.Error())
 
