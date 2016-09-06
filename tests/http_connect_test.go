@@ -425,36 +425,47 @@ func generalTestProcess(t *testing.T, httpConfigStr string, expected []string, h
 	tokenClientSub.Wait()
 	assert.Nil(tokenClientSub.Error())
 
+	waitPubChan := make(chan string)
+
+	// wait for 1 publication of dummy worker
+	waitPub := func(t *testing.T, subscriberChannel chan [2]string, c chan string) {
+		t.Logf("wait for 1 publication of dummy worker")
+		select {
+		case message := <-subscriberChannel:
+			assert.Equal(expectedTopic, message[0])
+			var respJsonMap map[string]interface{}
+			var expectedJsonMap map[string]interface{}
+
+			err := json.Unmarshal([]byte(message[1]), &respJsonMap)
+			if err != nil {
+				break
+			}
+			err = json.Unmarshal([]byte(expectedJson), &expectedJsonMap)
+			assert.Nil(err)
+			assert.Equal(expectedJsonMap["id"], respJsonMap["id"])
+			assert.Equal(expectedJsonMap["status"], respJsonMap["status"])
+			if expectedJsonBody != "NOT USED" {
+				assert.Equal(expectedJsonMap["body"], respJsonMap["body"])
+			}
+
+		case <-time.After(time.Second * 11):
+			assert.Equal("subscribe completed in 11 sec", "not completed")
+		}
+		c <- "done"
+	}
+
+	go waitPub(t, subscriberChannel, waitPubChan)
+
+	time.Sleep(100 * time.Millisecond)
+
 	// publish JSON
 	tokenClientPub := client.Publish(requestTopic, byte(qos), false, requestJson_pre+listener+requestJson_post)
 	tokenClientPub.Wait()
 	assert.Nil(tokenClientPub.Error())
 
-	// wait for 1 publication of dummy worker
-	t.Logf("wait for 1 publication of dummy worker")
-	select {
-	case message := <-subscriberChannel:
-		assert.Equal(expectedTopic, message[0])
-		var respJsonMap map[string]interface{}
-		var expectedJsonMap map[string]interface{}
+	// finalize
+	<-waitPubChan
 
-		err := json.Unmarshal([]byte(message[1]), &respJsonMap)
-		if err != nil {
-			break
-		}
-		err = json.Unmarshal([]byte(expectedJson), &expectedJsonMap)
-		assert.Nil(err)
-		assert.Equal(expectedJsonMap["id"], respJsonMap["id"])
-		assert.Equal(expectedJsonMap["status"], respJsonMap["status"])
-		if expectedJsonBody != "NOT USED" {
-			assert.Equal(expectedJsonMap["body"], respJsonMap["body"])
-		}
-
-	case <-time.After(time.Second * 11):
-		assert.Equal("subscribe completed in 11 sec", "not completed")
-	}
-
-	time.Sleep(100 * time.Millisecond)
 	httpCommandChannel <- "done"
 	time.Sleep(100 * time.Millisecond)
 	fujiCommandChannel <- "close"
