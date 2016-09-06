@@ -125,7 +125,7 @@ func TestHttpConnectPostLocalPubSub(t *testing.T) {
 
 [http]
     broker = "mosquitto"
-    qos = 2
+    qos = 0
     enabled = true
 `
 	generalTestProcess(t, httpConfigStr, expected, httpTestServerEchoBack)
@@ -154,7 +154,7 @@ func TestHttpConnectBadJSONNoIdRequesttLocalPubSub(t *testing.T) {
 
 [http]
     broker = "mosquitto"
-    qos = 2
+    qos = 0
     enabled = true
 `
 	generalTestProcess(t, httpConfigStr, expected, httpTestServerEchoBack)
@@ -183,7 +183,7 @@ func TestHttpConnectBadJSONNoUrlRequesttLocalPubSub(t *testing.T) {
 
 [http]
     broker = "mosquitto"
-    qos = 2
+    qos = 0
     enabled = true
 `
 	generalTestProcess(t, httpConfigStr, expected, httpTestServerEchoBack)
@@ -212,7 +212,7 @@ func TestHttpConnectBadJSONNoMethodRequesttLocalPubSub(t *testing.T) {
 
 [http]
     broker = "mosquitto"
-    qos = 2
+    qos = 0
     enabled = true
 `
 	generalTestProcess(t, httpConfigStr, expected, httpTestServerEchoBack)
@@ -241,7 +241,7 @@ func TestHttpConnectBadJSONNoBodyRequesttLocalPubSub(t *testing.T) {
 
 [http]
     broker = "mosquitto"
-    qos = 2
+    qos = 0
     enabled = true
 `
 	generalTestProcess(t, httpConfigStr, expected, httpTestServerEchoBack)
@@ -270,7 +270,7 @@ func TestHttpConnectGetLocalPubSub(t *testing.T) {
 
 [http]
     broker = "mosquitto"
-    qos = 2
+    qos = 0
     enabled = true
 `
 	generalTestProcess(t, httpConfigStr, expected, httpTestServerEchoBack)
@@ -298,7 +298,7 @@ func TestHttpConnectBadURLGetLocalPubSub(t *testing.T) {
 
 [http]
     broker = "mosquitto"
-    qos = 2
+    qos = 0
     enabled = true
 `
 	generalTestProcess(t, httpConfigStr, expected, httpTestServerEchoBack)
@@ -327,7 +327,7 @@ func TestHttpConnectRedirectPostLocalPubSub(t *testing.T) {
 
 [http]
     broker = "mosquitto"
-    qos = 2
+    qos = 0
     enabled = true
 `
 	generalTestProcess(t, httpConfigStr, expected, httpTestServerRedirect)
@@ -357,7 +357,7 @@ func TestHttpConnectNotFoundGetLocalPubSub(t *testing.T) {
 
 [http]
     broker = "mosquitto"
-    qos = 2
+    qos = 0
     enabled = true
 `
 	generalTestProcess(t, httpConfigStr, expected, httpTestServerNotFound)
