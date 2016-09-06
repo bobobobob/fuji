@@ -466,6 +466,7 @@ func generalTestProcess(t *testing.T, httpConfigStr string, expected []string, h
 	// finalize
 	<-waitPubChan
 
+	time.Sleep(100 * time.Millisecond)
 	httpCommandChannel <- "done"
 	time.Sleep(100 * time.Millisecond)
 	fujiCommandChannel <- "close"
