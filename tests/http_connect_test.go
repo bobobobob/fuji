@@ -372,13 +372,13 @@ func generalTestProcess(t *testing.T, httpConfigStr string, expected []string, h
 	requestJson_pre, requestJson_post, expectedJsonBody, expectedJson := expected[0], expected[1], expected[2], expected[3]
 
 	// start fuji
-	commandChannel := fujiHttpConnectLocalPub(t, httpConfigStr)
+	fujiCommandChannel := fujiHttpConnectLocalPub(t, httpConfigStr)
 
 	// start http server
-	httpCmdChan := make(chan string, 2)
-	go httpTestServer(t, httpCmdChan, expectedJsonBody)
+	httpCommandChannel := make(chan string, 2)
+	go httpTestServer(t, httpCommandChannel, expectedJsonBody)
 	// wait for bootup
-	listener := <-httpCmdChan
+	listener := <-httpCommandChannel
 	t.Logf("http started at: %s", listener)
 
 	// pub/sub test to broker on localhost
@@ -454,7 +454,9 @@ func generalTestProcess(t *testing.T, httpConfigStr string, expected []string, h
 		assert.Equal("subscribe completed in 11 sec", "not completed")
 	}
 
-	httpCmdChan <- "done"
-	commandChannel <- "close"
-	time.Sleep(500 * time.Millisecond)
+	httpCommandChannel <- "done"
+	fujiCommandChannel <- "close"
+	time.Sleep(300 * time.Millisecond)
+	client.Disconnect(250)
+	time.Sleep(300 * time.Millisecond)
 }
