@@ -410,25 +410,25 @@ func generalTestProcess(t *testing.T, httpConfigStr string, expected []string, h
 	// defer client.Disconnect(250)
 
 	assert.Nil(err)
-	token := client.Connect()
-	token.Wait()
-	assert.Nil(token.Error())
+	tokenClientConnect := client.Connect()
+	tokenClientConnect.Wait()
+	assert.Nil(tokenClientConnect.Error())
 
 	qos := 0
 	requestTopic := fmt.Sprintf("%s/%s/http/request", brokerList[0].TopicPrefix, gw.Name)
 	expectedTopic := fmt.Sprintf("%s/%s/http/response", brokerList[0].TopicPrefix, gw.Name)
 	t.Logf("expetcted topic: %s\nexpected message%s", expectedTopic, expectedJson)
-	token = client.Subscribe(expectedTopic, byte(qos), func(client *MQTT.Client, msg MQTT.Message) {
+	tokenClientSub := client.Subscribe(expectedTopic, byte(qos), func(client *MQTT.Client, msg MQTT.Message) {
 		t.Log("subscriber received topic: %s, message: %s", msg.Topic(), msg.Payload())
 		subscriberChannel <- [2]string{msg.Topic(), string(msg.Payload())}
 	})
-	token.Wait()
-	assert.Nil(token.Error())
+	tokenClientSub.Wait()
+	assert.Nil(tokenClientSub.Error())
 
 	// publish JSON
-	token = client.Publish(requestTopic, byte(qos), false, requestJson_pre+listener+requestJson_post)
-	token.Wait()
-	assert.Nil(token.Error())
+	tokenClientPub := client.Publish(requestTopic, byte(qos), false, requestJson_pre+listener+requestJson_post)
+	tokenClientPub.Wait()
+	assert.Nil(tokenClientPub.Error())
 
 	// wait for 1 publication of dummy worker
 	t.Logf("wait for 1 publication of dummy worker")
