@@ -2,6 +2,9 @@
 MQTT Gateway: Fuji
 ###########################
 
+
+**The development of this product ended on January 6, 2017.**
+
 :version: 1.0.2
 
 .. image:: https://circleci.com/gh/shiguredo/fuji/tree/develop.svg?style=svg&circle-token=203d959fffaf8dcdc0c68642dde5329e55a47792
@@ -91,16 +94,6 @@ How to Contribute
 =================
 
 see `CONTRIBUTING.rst <https://github.com/shiguredo/fuji/blob/develop/CONTRIBUTING.rst>`_
-
-Development Logs
-========================
-
-**Sorry for written in Japanese.**
-
-**開発に関する詳細については開発ログをご覧ください**
-
-`時雨堂 MQTT ゲートウェイ Fuji 開発ログ <https://gist.github.com/voluntas/23132cd3848af5b3ee1e>`_
-
 
 How To Release
 ==================
